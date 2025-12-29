@@ -1,0 +1,67 @@
+:root {
+    /* Transit App Colors */
+    --color-primary: #00d563;
+    /* Transit Green */
+    --color-primary-dark: #00b050;
+    --color-background: #1c1c1e;
+    /* Dark theme background */
+    --color-background-secondary: #2c2c2e;
+    /* Cards/Sheets */
+    --color-text: #ffffff;
+    --color-text-secondary: #8e8e93;
+    --color-border: #3a3a3c;
+
+    /* Line Colors */
+    --color-metro: #007aff;
+    /* Blue for Metro */
+    --color-tram: #ff9500;
+    /* Orange for Tram */
+    --color-bus: #af52de;
+    /* Purple for Bus */
+    --color-etusa: #34c759;
+    /* Green for Etusa specific */
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+
+    /* Typography */
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--color-background);
+    color: var(--color-text);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+    /* App-like feel */
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+/* Scrollbar styling for webkit */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-background);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+}

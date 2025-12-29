@@ -1,0 +1,1682 @@
+[
+    {
+        "idLigne": 29,
+        "nomLigne": "L90",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place du 1er Mai",
+                    "lat": "36.759973",
+                    "lon": "3.057347"
+                },
+                {
+                    "nom": "Moulin",
+                    "lat": "36.765107",
+                    "lon": "3.055978"
+                },
+                {
+                    "nom": "Mauretania",
+                    "lat": "36.76792",
+                    "lon": "3.056233"
+                },
+                {
+                    "nom": "La Grande Poste",
+                    "lat": "36.772614",
+                    "lon": "3.060625"
+                },
+                {
+                    "nom": "Ziroud Youcef",
+                    "lat": "36.777694",
+                    "lon": "3.060359"
+                },
+                {
+                    "nom": "Port Said",
+                    "lat": "36.780884",
+                    "lon": "3.061815"
+                },
+                {
+                    "nom": "Place des Martyrs",
+                    "lat": "36.785291",
+                    "lon": "3.063398"
+                },
+                {
+                    "nom": "Boul. TALEB Abderahmane",
+                    "lat": "36.790866",
+                    "lon": "3.057629"
+                },
+                {
+                    "nom": "Basta Ali",
+                    "lat": "36.791872",
+                    "lon": "3.052606"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 30,
+        "nomLigne": "L99",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place du 1er Mai",
+                    "lat": "36.759973",
+                    "lon": "3.057347"
+                },
+                {
+                    "nom": "Moulin",
+                    "lat": "36.765107",
+                    "lon": "3.055978"
+                },
+                {
+                    "nom": "Mauretania",
+                    "lat": "36.76792",
+                    "lon": "3.056233"
+                },
+                {
+                    "nom": "La Grande Poste",
+                    "lat": "36.772614",
+                    "lon": "3.060625"
+                },
+                {
+                    "nom": "Ziroud Youcef",
+                    "lat": "36.777694",
+                    "lon": "3.060359"
+                },
+                {
+                    "nom": "Port Said",
+                    "lat": "36.780884",
+                    "lon": "3.061815"
+                },
+                {
+                    "nom": "Place des Martyrs",
+                    "lat": "36.785291",
+                    "lon": "3.063398"
+                },
+                {
+                    "nom": "Place El Kettani",
+                    "lat": "36.791694",
+                    "lon": "3.058311"
+                },
+                {
+                    "nom": "Place Ferhani",
+                    "lat": "36.794223",
+                    "lon": "3.053061"
+                },
+                {
+                    "nom": "Stade Bologhine",
+                    "lat": "36.801843",
+                    "lon": "3.048442"
+                },
+                {
+                    "nom": "APC Bologhine",
+                    "lat": "36.805622",
+                    "lon": "3.043722"
+                },
+                {
+                    "nom": "Plateau Bologhine",
+                    "lat": "36.809362",
+                    "lon": "3.038276"
+                },
+                {
+                    "nom": "Deux Moulins",
+                    "lat": "36.81159",
+                    "lon": "3.028918"
+                },
+                {
+                    "nom": "La Vigie",
+                    "lat": "36.813089",
+                    "lon": "3.021138"
+                },
+                {
+                    "nom": "Rais Hamidou 1",
+                    "lat": "36.816828",
+                    "lon": "3.014282"
+                },
+                {
+                    "nom": "Rais Hamidou 2",
+                    "lat": "36.817202",
+                    "lon": "3.009303"
+                },
+                {
+                    "nom": "Horizons Bleus",
+                    "lat": "36.815818",
+                    "lon": "3.001922"
+                },
+                {
+                    "nom": "Miramar",
+                    "lat": "36.814715",
+                    "lon": "2.996389"
+                },
+                {
+                    "nom": "Bains Romains",
+                    "lat": "36.813455",
+                    "lon": "2.991112"
+                },
+                {
+                    "nom": "Bainem",
+                    "lat": "36.813748",
+                    "lon": "2.970594"
+                },
+                {
+                    "nom": "Cité Boukikaz",
+                    "lat": "36.808602",
+                    "lon": "2.948142"
+                },
+                {
+                    "nom": "Ain Benian",
+                    "lat": "36.801528",
+                    "lon": "2.911751"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 35,
+        "nomLigne": "L01",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "El Harrach",
+                    "lat": "36.721639",
+                    "lon": "3.135912"
+                },
+                {
+                    "nom": "Gare El Harrach",
+                    "lat": "36.722148",
+                    "lon": "3.133022"
+                },
+                {
+                    "nom": "Diar Djemaa",
+                    "lat": "36.728387",
+                    "lon": "3.128373"
+                },
+                {
+                    "nom": "Caroubier",
+                    "lat": "36.734685",
+                    "lon": "3.11988"
+                },
+                {
+                    "nom": "Hai El Badr",
+                    "lat": "36.724057",
+                    "lon": "3.102025"
+                },
+                {
+                    "nom": "Mer et Soleil",
+                    "lat": "36.734142",
+                    "lon": "3.099542"
+                },
+                {
+                    "nom": "Ruisseau",
+                    "lat": "36.74268",
+                    "lon": "3.086245"
+                },
+                {
+                    "nom": "Jardin d Essai",
+                    "lat": "36.750957",
+                    "lon": "3.075906"
+                },
+                {
+                    "nom": "Belcourt",
+                    "lat": "36.755107",
+                    "lon": "3.066356"
+                },
+                {
+                    "nom": "Place du 1er Mai",
+                    "lat": "36.759973",
+                    "lon": "3.057347"
+                },
+                {
+                    "nom": "Place Aissat Idir",
+                    "lat": "36.757069",
+                    "lon": "3.061274"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 36,
+        "nomLigne": "L92",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place Ferhani",
+                    "lat": "36.793493",
+                    "lon": "3.053524"
+                },
+                {
+                    "nom": "Place des Martyrs",
+                    "lat": "36.785488",
+                    "lon": "3.062753"
+                },
+                {
+                    "nom": "Port Said",
+                    "lat": "36.781002",
+                    "lon": "3.061811"
+                },
+                {
+                    "nom": "La Grande Poste",
+                    "lat": "36.773667",
+                    "lon": "3.059787"
+                },
+                {
+                    "nom": "Place du 1er Mai",
+                    "lat": "36.76025",
+                    "lon": "3.056112"
+                },
+                {
+                    "nom": "Jardin d Essai",
+                    "lat": "36.746385",
+                    "lon": "3.073127"
+                },
+                {
+                    "nom": "El Annasser",
+                    "lat": "36.743978",
+                    "lon": "3.078623"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 43,
+        "nomLigne": "L19",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place Aissat Idir",
+                    "lat": "36.757223",
+                    "lon": "3.061468"
+                },
+                {
+                    "nom": "Ruisseau",
+                    "lat": "36.747457",
+                    "lon": "3.088788"
+                },
+                {
+                    "nom": "Gare Caroubier",
+                    "lat": "36.743432",
+                    "lon": "3.103644"
+                },
+                {
+                    "nom": "Cinq Maisons",
+                    "lat": "36.72686",
+                    "lon": "3.146495"
+                },
+                {
+                    "nom": "Cimetiere El Alia",
+                    "lat": "36.723795",
+                    "lon": "3.162343"
+                },
+                {
+                    "nom": "Bab Ezzouar",
+                    "lat": "36.725995",
+                    "lon": "3.184152"
+                },
+                {
+                    "nom": "Université USTHB",
+                    "lat": "36.71907",
+                    "lon": "3.181491"
+                },
+                {
+                    "nom": "Les Hotels (BEZ)",
+                    "lat": "36.715185",
+                    "lon": "3.197921"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 28,
+        "nomLigne": "L89",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place du 1er Mai",
+                    "lat": "36.760156",
+                    "lon": "3.056311"
+                },
+                {
+                    "nom": "Musset",
+                    "lat": "36.755124",
+                    "lon": "3.059896"
+                },
+                {
+                    "nom": "Place du 11 Decembre 1960",
+                    "lat": "36.752749",
+                    "lon": "3.062106"
+                },
+                {
+                    "nom": "Sidi M hamed",
+                    "lat": "36.749866",
+                    "lon": "3.066375"
+                },
+                {
+                    "nom": "El Hamma",
+                    "lat": "36.74855",
+                    "lon": "3.069152"
+                },
+                {
+                    "nom": "Jardin d Essai",
+                    "lat": "36.746385",
+                    "lon": "3.073127"
+                },
+                {
+                    "nom": "El Annasser",
+                    "lat": "36.743978",
+                    "lon": "3.078623"
+                },
+                {
+                    "nom": "Oued kniss",
+                    "lat": "36.741667",
+                    "lon": "3.083293"
+                },
+                {
+                    "nom": "Les Oasis",
+                    "lat": "36.739122",
+                    "lon": "3.088254"
+                },
+                {
+                    "nom": "Calvaire",
+                    "lat": "36.737105",
+                    "lon": "3.091422"
+                },
+                {
+                    "nom": "APC Kouba",
+                    "lat": "36.73402",
+                    "lon": "3.086723"
+                },
+                {
+                    "nom": "La Croix",
+                    "lat": "36.729979",
+                    "lon": "3.084068"
+                },
+                {
+                    "nom": "Freres Abdeslami",
+                    "lat": "36.729445",
+                    "lon": "3.079391"
+                },
+                {
+                    "nom": "Vieux Kouba",
+                    "lat": "36.72974",
+                    "lon": "3.075135"
+                },
+                {
+                    "nom": "Station Intermodale de KOUBA",
+                    "lat": "36.730244",
+                    "lon": "3.073061"
+                }
+            ],
+            "retour": [
+                {
+                    "nom": "Station Intermodale de KOUBA",
+                    "lat": "36.730228",
+                    "lon": "3.073109"
+                },
+                {
+                    "nom": "Vieux Kouba",
+                    "lat": "36.729634",
+                    "lon": "3.075038"
+                },
+                {
+                    "nom": "Freres Abdeslami",
+                    "lat": "36.729274",
+                    "lon": "3.079804"
+                },
+                {
+                    "nom": "La Croix",
+                    "lat": "36.729943",
+                    "lon": "3.084107"
+                },
+                {
+                    "nom": "APC Kouba",
+                    "lat": "36.73389",
+                    "lon": "3.086829"
+                },
+                {
+                    "nom": "Calvaire",
+                    "lat": "36.737105",
+                    "lon": "3.091422"
+                },
+                {
+                    "nom": "Les Oasis",
+                    "lat": "36.739103",
+                    "lon": "3.08842"
+                },
+                {
+                    "nom": "Oued kniss",
+                    "lat": "36.741231",
+                    "lon": "3.084227"
+                },
+                {
+                    "nom": "El Annasser S.M.M",
+                    "lat": "36.742824",
+                    "lon": "3.08316"
+                },
+                {
+                    "nom": "Hamoud Boualem",
+                    "lat": "36.747469",
+                    "lon": "3.085541"
+                },
+                {
+                    "nom": "Jardin d Essai",
+                    "lat": "36.750957",
+                    "lon": "3.075906"
+                },
+                {
+                    "nom": "Les Ateliers",
+                    "lat": "36.752105",
+                    "lon": "3.070514"
+                },
+                {
+                    "nom": "Belcourt",
+                    "lat": "36.755107",
+                    "lon": "3.066356"
+                },
+                {
+                    "nom": "Place du 1er Mai",
+                    "lat": "36.760117",
+                    "lon": "3.057037"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 39,
+        "nomLigne": "L06",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place des Martyrs",
+                    "lat": "36.785488",
+                    "lon": "3.062753"
+                },
+                {
+                    "nom": "Port Said (Square)",
+                    "lat": "36.781002",
+                    "lon": "3.061811"
+                },
+                {
+                    "nom": "Ziroud Youcef (Hotel Saphir)",
+                    "lat": "36.777664",
+                    "lon": "3.060203"
+                },
+                {
+                    "nom": "La Grande Poste (Parc Sofia)",
+                    "lat": "36.773667",
+                    "lon": "3.059787"
+                },
+                {
+                    "nom": "Mauretania",
+                    "lat": "36.767989",
+                    "lon": "3.056196"
+                },
+                {
+                    "nom": "Moulin",
+                    "lat": "36.765085",
+                    "lon": "3.055929"
+                },
+                {
+                    "nom": "Place du 1er Mai",
+                    "lat": "36.76025",
+                    "lon": "3.056112"
+                },
+                {
+                    "nom": "Musset",
+                    "lat": "36.755124",
+                    "lon": "3.059896"
+                },
+                {
+                    "nom": "Place du 11 Decembre 1960",
+                    "lat": "36.752749",
+                    "lon": "3.062106"
+                },
+                {
+                    "nom": "Sidi M hamed",
+                    "lat": "36.749866",
+                    "lon": "3.066375"
+                },
+                {
+                    "nom": "El Hamma",
+                    "lat": "36.74855",
+                    "lon": "3.069152"
+                },
+                {
+                    "nom": "Jardin d Essai",
+                    "lat": "36.746385",
+                    "lon": "3.073127"
+                },
+                {
+                    "nom": "El Annasser",
+                    "lat": "36.743978",
+                    "lon": "3.078623"
+                },
+                {
+                    "nom": "Oued kniss",
+                    "lat": "36.741667",
+                    "lon": "3.083293"
+                },
+                {
+                    "nom": "Les Oasis",
+                    "lat": "36.739122",
+                    "lon": "3.088254"
+                },
+                {
+                    "nom": "Calvaire",
+                    "lat": "36.737105",
+                    "lon": "3.091422"
+                },
+                {
+                    "nom": "APC Kouba",
+                    "lat": "36.73402",
+                    "lon": "3.086723"
+                },
+                {
+                    "nom": "La Croix",
+                    "lat": "36.729979",
+                    "lon": "3.084068"
+                },
+                {
+                    "nom": "Freres Abdeslami",
+                    "lat": "36.729445",
+                    "lon": "3.079391"
+                },
+                {
+                    "nom": "Vieux Kouba",
+                    "lat": "36.72974",
+                    "lon": "3.075135"
+                },
+                {
+                    "nom": "Station Intermodale de KOUBA",
+                    "lat": "36.730244",
+                    "lon": "3.073061"
+                }
+            ],
+            "retour": [
+                {
+                    "nom": "Station Intermodale de KOUBA",
+                    "lat": "36.730228",
+                    "lon": "3.073109"
+                },
+                {
+                    "nom": "Vieux Kouba",
+                    "lat": "36.729634",
+                    "lon": "3.075038"
+                },
+                {
+                    "nom": "Freres Abdeslami",
+                    "lat": "36.729274",
+                    "lon": "3.079804"
+                },
+                {
+                    "nom": "La Croix",
+                    "lat": "36.729943",
+                    "lon": "3.084107"
+                },
+                {
+                    "nom": "APC Kouba",
+                    "lat": "36.73389",
+                    "lon": "3.086829"
+                },
+                {
+                    "nom": "Calvaire",
+                    "lat": "36.737161",
+                    "lon": "3.0914"
+                },
+                {
+                    "nom": "Les Oasis",
+                    "lat": "36.739103",
+                    "lon": "3.08842"
+                },
+                {
+                    "nom": "Oued kniss",
+                    "lat": "36.741231",
+                    "lon": "3.084227"
+                },
+                {
+                    "nom": "El Annasser S.M.M",
+                    "lat": "36.742824",
+                    "lon": "3.08316"
+                },
+                {
+                    "nom": "Hamoud Boualem",
+                    "lat": "36.747469",
+                    "lon": "3.085541"
+                },
+                {
+                    "nom": "Jardin d Essai",
+                    "lat": "36.750957",
+                    "lon": "3.075906"
+                },
+                {
+                    "nom": "Les Ateliers",
+                    "lat": "36.752105",
+                    "lon": "3.070514"
+                },
+                {
+                    "nom": "Belcourt",
+                    "lat": "36.755107",
+                    "lon": "3.066356"
+                },
+                {
+                    "nom": "Place du 1er Mai",
+                    "lat": "36.759973",
+                    "lon": "3.057347"
+                },
+                {
+                    "nom": "Moulin",
+                    "lat": "36.765107",
+                    "lon": "3.055978"
+                },
+                {
+                    "nom": "Mauretania",
+                    "lat": "36.76792",
+                    "lon": "3.056233"
+                },
+                {
+                    "nom": "La Grande Poste (Parc Sofia)",
+                    "lat": "36.772614",
+                    "lon": "3.060625"
+                },
+                {
+                    "nom": "Ziroud Youcef (Hotel Saphir)",
+                    "lat": "36.777694",
+                    "lon": "3.060359"
+                },
+                {
+                    "nom": "Port Said (Square)",
+                    "lat": "36.780884",
+                    "lon": "3.061815"
+                },
+                {
+                    "nom": "Place des Martyrs",
+                    "lat": "36.785291",
+                    "lon": "3.063398"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 42,
+        "nomLigne": "L18",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Bachdjarah",
+                    "lat": "36.7212",
+                    "lon": "3.115319"
+                },
+                {
+                    "nom": "Bourouba",
+                    "lat": "36.715495",
+                    "lon": "3.108781"
+                },
+                {
+                    "nom": "Lotissement Michel",
+                    "lat": "36.720974",
+                    "lon": "3.102032"
+                },
+                {
+                    "nom": "Hai El Badr",
+                    "lat": "36.724057",
+                    "lon": "3.102025"
+                },
+                {
+                    "nom": "Stade Ben Haddad (Ben Omar)",
+                    "lat": "36.729394",
+                    "lon": "3.089472"
+                },
+                {
+                    "nom": "La Croix",
+                    "lat": "36.729979",
+                    "lon": "3.084068"
+                },
+                {
+                    "nom": "Freres Abdeslami",
+                    "lat": "36.729445",
+                    "lon": "3.079391"
+                },
+                {
+                    "nom": "Vieux Kouba",
+                    "lat": "36.72974",
+                    "lon": "3.075135"
+                },
+                {
+                    "nom": "Station Intermodale de KOUBA",
+                    "lat": "36.730244",
+                    "lon": "3.073061"
+                },
+                {
+                    "nom": "Garidi 1",
+                    "lat": "36.728906",
+                    "lon": "3.069434"
+                },
+                {
+                    "nom": "Hopital Militaire",
+                    "lat": "36.722904",
+                    "lon": "3.064709"
+                }
+            ],
+            "retour": [
+                {
+                    "nom": "Hopital Militaire",
+                    "lat": "36.722904",
+                    "lon": "3.064709"
+                },
+                {
+                    "nom": "Station Intermodale de KOUBA",
+                    "lat": "36.730228",
+                    "lon": "3.073109"
+                },
+                {
+                    "nom": "Vieux Kouba",
+                    "lat": "36.729634",
+                    "lon": "3.075038"
+                },
+                {
+                    "nom": "Freres Abdeslami",
+                    "lat": "36.729274",
+                    "lon": "3.079804"
+                },
+                {
+                    "nom": "La Croix",
+                    "lat": "36.729943",
+                    "lon": "3.084107"
+                },
+                {
+                    "nom": "Stade Ben Haddad (Ben Omar)",
+                    "lat": "36.729136",
+                    "lon": "3.089521"
+                },
+                {
+                    "nom": "Hai El Badr",
+                    "lat": "36.724057",
+                    "lon": "3.102025"
+                },
+                {
+                    "nom": "Lotissement Michel",
+                    "lat": "36.721035",
+                    "lon": "3.101793"
+                },
+                {
+                    "nom": "Bourouba",
+                    "lat": "36.715387",
+                    "lon": "3.108573"
+                },
+                {
+                    "nom": "Station Métro Bachdjarah Tennis",
+                    "lat": "36.717587",
+                    "lon": "3.111234"
+                },
+                {
+                    "nom": "Bachdjarah",
+                    "lat": "36.721405",
+                    "lon": "3.116025"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 17,
+        "nomLigne": "L31",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.769066",
+                    "lon": "3.05482"
+                },
+                {
+                    "nom": "Escaliers Mecaniques",
+                    "lat": "36.766069",
+                    "lon": "3.048209"
+                },
+                {
+                    "nom": "Parc TIFARITI",
+                    "lat": "36.764375",
+                    "lon": "3.044224"
+                },
+                {
+                    "nom": "Beaux Arts",
+                    "lat": "36.762001",
+                    "lon": "3.045146"
+                },
+                {
+                    "nom": "Souidani Boudjemaa",
+                    "lat": "36.752614",
+                    "lon": "3.047847"
+                },
+                {
+                    "nom": "El Bitoum",
+                    "lat": "36.752248",
+                    "lon": "3.04106"
+                },
+                {
+                    "nom": "Place El Quods",
+                    "lat": "36.747423",
+                    "lon": "3.0401"
+                },
+                {
+                    "nom": "Place Al Smaa",
+                    "lat": "36.743266",
+                    "lon": "3.042154"
+                }
+            ],
+            "retour": [
+                {
+                    "nom": "Place Al Smaa",
+                    "lat": "36.743266",
+                    "lon": "3.042154"
+                },
+                {
+                    "nom": "Place El Quods",
+                    "lat": "36.747559",
+                    "lon": "3.040165"
+                },
+                {
+                    "nom": "El Bitoum",
+                    "lat": "36.753858",
+                    "lon": "3.043334"
+                },
+                {
+                    "nom": "Souidani Boudjemaa",
+                    "lat": "36.75249",
+                    "lon": "3.048739"
+                },
+                {
+                    "nom": "Palais du Peuple",
+                    "lat": "36.761317",
+                    "lon": "3.046627"
+                },
+                {
+                    "nom": "Musee BARDO",
+                    "lat": "36.762122",
+                    "lon": "3.047583"
+                },
+                {
+                    "nom": "Sacre Coeur",
+                    "lat": "36.763464",
+                    "lon": "3.047565"
+                },
+                {
+                    "nom": "Meissonier",
+                    "lat": "36.766179",
+                    "lon": "3.052027"
+                },
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.768729",
+                    "lon": "3.05463"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 18,
+        "nomLigne": "L32",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.769066",
+                    "lon": "3.05482"
+                },
+                {
+                    "nom": "Escaliers Mecaniques",
+                    "lat": "36.766069",
+                    "lon": "3.048209"
+                },
+                {
+                    "nom": "Parc TIFARITI",
+                    "lat": "36.764375",
+                    "lon": "3.044224"
+                },
+                {
+                    "nom": "Beaux Arts",
+                    "lat": "36.762001",
+                    "lon": "3.045146"
+                },
+                {
+                    "nom": "ENTV",
+                    "lat": "36.753295",
+                    "lon": "3.048799"
+                },
+                {
+                    "nom": "Boulevard des Martyrs",
+                    "lat": "36.751076",
+                    "lon": "3.053546"
+                },
+                {
+                    "nom": "Panorama",
+                    "lat": "36.750458",
+                    "lon": "3.057136"
+                },
+                {
+                    "nom": "Cité Comfort",
+                    "lat": "36.746713",
+                    "lon": "3.064297"
+                },
+                {
+                    "nom": "El Madania",
+                    "lat": "36.742146",
+                    "lon": "3.065238"
+                }
+            ],
+            "retour": [
+                {
+                    "nom": "El Madania",
+                    "lat": "36.742158",
+                    "lon": "3.065401"
+                },
+                {
+                    "nom": "Cité Comfort",
+                    "lat": "36.746617",
+                    "lon": "3.064333"
+                },
+                {
+                    "nom": "Panorama",
+                    "lat": "36.750469",
+                    "lon": "3.057011"
+                },
+                {
+                    "nom": "Boulevard des Martyrs",
+                    "lat": "36.751134",
+                    "lon": "3.053477"
+                },
+                {
+                    "nom": "ENTV",
+                    "lat": "36.753256",
+                    "lon": "3.048937"
+                },
+                {
+                    "nom": "Palais du Peuple",
+                    "lat": "36.761317",
+                    "lon": "3.046627"
+                },
+                {
+                    "nom": "Musee BARDO",
+                    "lat": "36.762122",
+                    "lon": "3.047583"
+                },
+                {
+                    "nom": "Sacre Coeur",
+                    "lat": "36.763464",
+                    "lon": "3.047565"
+                },
+                {
+                    "nom": "Meissonier",
+                    "lat": "36.766179",
+                    "lon": "3.052027"
+                },
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.768729",
+                    "lon": "3.05463"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 19,
+        "nomLigne": "L33",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.769066",
+                    "lon": "3.05482"
+                },
+                {
+                    "nom": "Escaliers Mecaniques",
+                    "lat": "36.766069",
+                    "lon": "3.048209"
+                },
+                {
+                    "nom": "Parc TIFARITI",
+                    "lat": "36.764375",
+                    "lon": "3.044224"
+                },
+                {
+                    "nom": "Beaux Arts",
+                    "lat": "36.762001",
+                    "lon": "3.045146"
+                },
+                {
+                    "nom": "Souidani Boudjemaa",
+                    "lat": "36.752614",
+                    "lon": "3.047847"
+                },
+                {
+                    "nom": "Mohammedi",
+                    "lat": "36.751369",
+                    "lon": "3.041498"
+                },
+                {
+                    "nom": "Bir Mourad Rais",
+                    "lat": "36.7401",
+                    "lon": "3.049056"
+                },
+                {
+                    "nom": "Stade de Mohamed IGUER",
+                    "lat": "36.734874",
+                    "lon": "3.048823"
+                },
+                {
+                    "nom": "Garidi 2",
+                    "lat": "36.733339",
+                    "lon": "3.063236"
+                },
+                {
+                    "nom": "Station Intermodale de KOUBA",
+                    "lat": "36.730244",
+                    "lon": "3.073061"
+                }
+            ],
+            "retour": [
+                {
+                    "nom": "Station Intermodale de KOUBA",
+                    "lat": "36.730228",
+                    "lon": "3.073109"
+                },
+                {
+                    "nom": "Garidi 1",
+                    "lat": "36.728906",
+                    "lon": "3.069434"
+                },
+                {
+                    "nom": "Garidi 2",
+                    "lat": "36.733387",
+                    "lon": "3.062631"
+                },
+                {
+                    "nom": "Stade de Mohamed IGUER",
+                    "lat": "36.734648",
+                    "lon": "3.048967"
+                },
+                {
+                    "nom": "Bir Mourad Rais",
+                    "lat": "36.7401",
+                    "lon": "3.049056"
+                },
+                {
+                    "nom": "Mohammedi",
+                    "lat": "36.751245",
+                    "lon": "3.041789"
+                },
+                {
+                    "nom": "El Bitoum",
+                    "lat": "36.753858",
+                    "lon": "3.043334"
+                },
+                {
+                    "nom": "Souidani Boudjemaa",
+                    "lat": "36.75249",
+                    "lon": "3.048739"
+                },
+                {
+                    "nom": "Palais du Peuple",
+                    "lat": "36.761317",
+                    "lon": "3.046627"
+                },
+                {
+                    "nom": "Musee BARDO",
+                    "lat": "36.762122",
+                    "lon": "3.047583"
+                },
+                {
+                    "nom": "Sacre Coeur",
+                    "lat": "36.763464",
+                    "lon": "3.047565"
+                },
+                {
+                    "nom": "Meissonier",
+                    "lat": "36.766179",
+                    "lon": "3.052027"
+                },
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.768729",
+                    "lon": "3.05463"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 21,
+        "nomLigne": "L35",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.769066",
+                    "lon": "3.05482"
+                },
+                {
+                    "nom": "Escaliers Mecaniques",
+                    "lat": "36.766069",
+                    "lon": "3.048209"
+                },
+                {
+                    "nom": "Parc TIFARITI",
+                    "lat": "36.764375",
+                    "lon": "3.044224"
+                },
+                {
+                    "nom": "Beaux Arts",
+                    "lat": "36.762001",
+                    "lon": "3.045146"
+                },
+                {
+                    "nom": "Souidani Boudjemaa",
+                    "lat": "36.752614",
+                    "lon": "3.047847"
+                },
+                {
+                    "nom": "Mohammedi",
+                    "lat": "36.751369",
+                    "lon": "3.041498"
+                },
+                {
+                    "nom": "Bir Mourad Rais",
+                    "lat": "36.7401",
+                    "lon": "3.049056"
+                },
+                {
+                    "nom": "Stade de Mohamed IGUER",
+                    "lat": "36.734874",
+                    "lon": "3.048823"
+                },
+                {
+                    "nom": "La Cote",
+                    "lat": "36.727475",
+                    "lon": "3.04457"
+                },
+                {
+                    "nom": "Intersection Saoula",
+                    "lat": "36.711048",
+                    "lon": "3.045022"
+                },
+                {
+                    "nom": "Birkhadem",
+                    "lat": "36.715052",
+                    "lon": "3.049159"
+                }
+            ],
+            "retour": [
+                {
+                    "nom": "Birkhadem",
+                    "lat": "36.715052",
+                    "lon": "3.049159"
+                },
+                {
+                    "nom": "Les Vergers 1",
+                    "lat": "36.723311",
+                    "lon": "3.051366"
+                },
+                {
+                    "nom": "Les Vergers 2",
+                    "lat": "36.727098",
+                    "lon": "3.050037"
+                },
+                {
+                    "nom": "La Cote",
+                    "lat": "36.73077",
+                    "lon": "3.048146"
+                },
+                {
+                    "nom": "Stade de Mohamed IGUER",
+                    "lat": "36.734648",
+                    "lon": "3.048967"
+                },
+                {
+                    "nom": "Bir Mourad Rais",
+                    "lat": "36.7401",
+                    "lon": "3.049056"
+                },
+                {
+                    "nom": "Mohammedi",
+                    "lat": "36.751245",
+                    "lon": "3.041789"
+                },
+                {
+                    "nom": "El Bitoum",
+                    "lat": "36.753858",
+                    "lon": "3.043334"
+                },
+                {
+                    "nom": "Souidani Boudjemaa",
+                    "lat": "36.75249",
+                    "lon": "3.048739"
+                },
+                {
+                    "nom": "Palais du Peuple",
+                    "lat": "36.761317",
+                    "lon": "3.046627"
+                },
+                {
+                    "nom": "Musee BARDO",
+                    "lat": "36.762122",
+                    "lon": "3.047583"
+                },
+                {
+                    "nom": "Sacre Coeur",
+                    "lat": "36.763464",
+                    "lon": "3.047565"
+                },
+                {
+                    "nom": "Meissonier",
+                    "lat": "36.766179",
+                    "lon": "3.052027"
+                },
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.768729",
+                    "lon": "3.05463"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 22,
+        "nomLigne": "L39",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.769066",
+                    "lon": "3.05482"
+                },
+                {
+                    "nom": "Cité 5 Juillet BEZ",
+                    "lat": "36.720309",
+                    "lon": "3.201678"
+                },
+                {
+                    "nom": "Aeroport d Alger HOUARI Boumediene",
+                    "lat": "36.702691",
+                    "lon": "3.208742"
+                }
+            ],
+            "retour": [
+                {
+                    "nom": "Aeroport d Alger HOUARI Boumediene",
+                    "lat": "36.702691",
+                    "lon": "3.208742"
+                },
+                {
+                    "nom": "Cité 5 Juillet BEZ",
+                    "lat": "36.720472",
+                    "lon": "3.201739"
+                },
+                {
+                    "nom": "Les Ateliers",
+                    "lat": "36.75646",
+                    "lon": "3.066248"
+                },
+                {
+                    "nom": "Station 2 Mai",
+                    "lat": "36.764564",
+                    "lon": "3.058462"
+                },
+                {
+                    "nom": "Place du 1er Mai",
+                    "lat": "36.760117",
+                    "lon": "3.057037"
+                },
+                {
+                    "nom": "Sacre Coeur",
+                    "lat": "36.763464",
+                    "lon": "3.047565"
+                },
+                {
+                    "nom": "Meissonier",
+                    "lat": "36.766179",
+                    "lon": "3.052027"
+                },
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.768729",
+                    "lon": "3.05463"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 23,
+        "nomLigne": "L40",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.769066",
+                    "lon": "3.05482"
+                },
+                {
+                    "nom": "Escaliers Mecaniques",
+                    "lat": "36.766069",
+                    "lon": "3.048209"
+                },
+                {
+                    "nom": "Parc TIFARITI",
+                    "lat": "36.764375",
+                    "lon": "3.044224"
+                },
+                {
+                    "nom": "Beaux Arts",
+                    "lat": "36.762001",
+                    "lon": "3.045146"
+                },
+                {
+                    "nom": "CNR Bougara",
+                    "lat": "36.758606",
+                    "lon": "3.042513"
+                },
+                {
+                    "nom": "La Rochelle",
+                    "lat": "36.760796",
+                    "lon": "3.042547"
+                },
+                {
+                    "nom": "Jardin du Tunis",
+                    "lat": "36.765456",
+                    "lon": "3.039898"
+                },
+                {
+                    "nom": "Ahmed Bougara 1",
+                    "lat": "36.766932",
+                    "lon": "3.035252"
+                },
+                {
+                    "nom": "Ahmed Bougara 2",
+                    "lat": "36.768121",
+                    "lon": "3.032451"
+                },
+                {
+                    "nom": "Cheval Blanc",
+                    "lat": "36.769255",
+                    "lon": "3.02672"
+                },
+                {
+                    "nom": "Chateau Neuf",
+                    "lat": "36.768836",
+                    "lon": "3.021516"
+                },
+                {
+                    "nom": "Gue de Soleil",
+                    "lat": "36.768746",
+                    "lon": "3.013257"
+                },
+                {
+                    "nom": "Chevalley",
+                    "lat": "36.768912",
+                    "lon": "3.008185"
+                }
+            ],
+            "retour": [
+                {
+                    "nom": "Chevalley",
+                    "lat": "36.768901",
+                    "lon": "3.007868"
+                },
+                {
+                    "nom": "Fac des Langues",
+                    "lat": "36.763888",
+                    "lon": "3.014303"
+                },
+                {
+                    "nom": "Chateau Neuf",
+                    "lat": "36.768731",
+                    "lon": "3.021607"
+                },
+                {
+                    "nom": "Les Pins",
+                    "lat": "36.766952",
+                    "lon": "3.030501"
+                },
+                {
+                    "nom": "Ahmed Bougara",
+                    "lat": "36.766552",
+                    "lon": "3.036058"
+                },
+                {
+                    "nom": "Jardin de Tunis",
+                    "lat": "36.765232",
+                    "lon": "3.039438"
+                },
+                {
+                    "nom": "La Rochelle",
+                    "lat": "36.761016",
+                    "lon": "3.042563"
+                },
+                {
+                    "nom": "CNR Bougara",
+                    "lat": "36.75839",
+                    "lon": "3.042806"
+                },
+                {
+                    "nom": "Palais du Peuple",
+                    "lat": "36.761317",
+                    "lon": "3.046627"
+                },
+                {
+                    "nom": "Musee BARDO",
+                    "lat": "36.762122",
+                    "lon": "3.047583"
+                },
+                {
+                    "nom": "Sacre Coeur",
+                    "lat": "36.763464",
+                    "lon": "3.047565"
+                },
+                {
+                    "nom": "Meissonier",
+                    "lat": "36.766179",
+                    "lon": "3.052027"
+                },
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.768729",
+                    "lon": "3.05463"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 25,
+        "nomLigne": "L54",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.769066",
+                    "lon": "3.05482"
+                },
+                {
+                    "nom": "Escaliers Mecaniques",
+                    "lat": "36.766069",
+                    "lon": "3.048209"
+                },
+                {
+                    "nom": "Parc TIFARITI",
+                    "lat": "36.764375",
+                    "lon": "3.044224"
+                },
+                {
+                    "nom": "Beaux Arts",
+                    "lat": "36.762001",
+                    "lon": "3.045146"
+                },
+                {
+                    "nom": "Avenue Pekin",
+                    "lat": "36.750209",
+                    "lon": "3.049604"
+                },
+                {
+                    "nom": "Lycée Descarte",
+                    "lat": "36.749189",
+                    "lon": "3.050797"
+                }
+            ],
+            "retour": [
+                {
+                    "nom": "Lycée Descarte",
+                    "lat": "36.749189",
+                    "lon": "3.050797"
+                },
+                {
+                    "nom": "El Mouradia",
+                    "lat": "36.747665",
+                    "lon": "3.050759"
+                },
+                {
+                    "nom": "Souidani Boudjemaa",
+                    "lat": "36.75249",
+                    "lon": "3.048739"
+                },
+                {
+                    "nom": "Palais du Peuple",
+                    "lat": "36.761317",
+                    "lon": "3.046627"
+                },
+                {
+                    "nom": "Musee BARDO",
+                    "lat": "36.762122",
+                    "lon": "3.047583"
+                },
+                {
+                    "nom": "Sacre Coeur",
+                    "lat": "36.763464",
+                    "lon": "3.047565"
+                },
+                {
+                    "nom": "Meissonier",
+                    "lat": "36.766179",
+                    "lon": "3.052027"
+                },
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.768729",
+                    "lon": "3.05463"
+                }
+            ]
+        }
+    },
+    {
+        "idLigne": 45,
+        "nomLigne": "L36",
+        "itineraire": {
+            "aller": [
+                {
+                    "nom": "Basta Ali",
+                    "lat": "36.791872",
+                    "lon": "3.052606"
+                },
+                {
+                    "nom": "Boulevard TALEB Abderahmane",
+                    "lat": "36.790786",
+                    "lon": "3.057704"
+                },
+                {
+                    "nom": "Place des Martyrs",
+                    "lat": "36.785511",
+                    "lon": "3.06301"
+                },
+                {
+                    "nom": "Port Said (Square)",
+                    "lat": "36.781002",
+                    "lon": "3.061811"
+                },
+                {
+                    "nom": "Ziroud Youcef (Hotel Saphir)",
+                    "lat": "36.777664",
+                    "lon": "3.060203"
+                },
+                {
+                    "nom": "La Grande Poste (Parc Sofia)",
+                    "lat": "36.773667",
+                    "lon": "3.059787"
+                },
+                {
+                    "nom": "Tunnel des Facultes",
+                    "lat": "36.770578",
+                    "lon": "3.055472"
+                },
+                {
+                    "nom": "Escaliers Mecaniques",
+                    "lat": "36.766069",
+                    "lon": "3.048209"
+                },
+                {
+                    "nom": "Parc TIFARITI",
+                    "lat": "36.764375",
+                    "lon": "3.044224"
+                },
+                {
+                    "nom": "Beaux Arts",
+                    "lat": "36.762001",
+                    "lon": "3.045146"
+                }
+            ],
+            "retour": [
+                {
+                    "nom": "Beaux Arts",
+                    "lat": "36.762001",
+                    "lon": "3.045146"
+                },
+                {
+                    "nom": "Palais du Peuple",
+                    "lat": "36.761317",
+                    "lon": "3.046627"
+                },
+                {
+                    "nom": "Musee BARDO",
+                    "lat": "36.762122",
+                    "lon": "3.047583"
+                },
+                {
+                    "nom": "Sacre Coeur",
+                    "lat": "36.763464",
+                    "lon": "3.047565"
+                },
+                {
+                    "nom": "Meissonier",
+                    "lat": "36.766179",
+                    "lon": "3.052027"
+                },
+                {
+                    "nom": "Place Audin",
+                    "lat": "36.769066",
+                    "lon": "3.05482"
+                },
+                {
+                    "nom": "La Grande Poste (Parc Sofia)",
+                    "lat": "36.772614",
+                    "lon": "3.060625"
+                },
+                {
+                    "nom": "Ziroud Youcef (Hotel Saphir)",
+                    "lat": "36.777694",
+                    "lon": "3.060359"
+                },
+                {
+                    "nom": "Port Said (Square)",
+                    "lat": "36.780884",
+                    "lon": "3.061815"
+                },
+                {
+                    "nom": "Place des Martyrs",
+                    "lat": "36.785291",
+                    "lon": "3.063398"
+                },
+                {
+                    "nom": "Boulevard TALEB Abderahmane",
+                    "lat": "36.790866",
+                    "lon": "3.057629"
+                },
+                {
+                    "nom": "Basta Ali",
+                    "lat": "36.791872",
+                    "lon": "3.052606"
+                }
+            ]
+        }
+    }
+]
