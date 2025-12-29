@@ -1,0 +1,60 @@
+[
+    {
+        "id": "line-001",
+        "name": "101",
+        "longName": "Alger Centre <-> Zeralda",
+        "type": "bus",
+        "color": "#3498db",
+        "frequency": 30,
+        "operatingHours": {
+            "start": 6,
+            "end": 20
+        },
+        "stops": [
+            {
+                "name": "Tafourah",
+                "lat": 36.772,
+                "lng": 3.059,
+                "timeFromStart": 0
+            },
+            {
+                "name": "Ben Aknoun",
+                "lat": 36.754,
+                "lng": 3.029,
+                "timeFromStart": 20
+            },
+            {
+                "name": "Zeralda Ville",
+                "lat": 36.711,
+                "lng": 2.845,
+                "timeFromStart": 50
+            }
+        ]
+    },
+    {
+        "id": "line-002",
+        "name": "Blida-Express",
+        "longName": "Alger (Tafourah) <-> Blida (Gare)",
+        "type": "train",
+        "color": "#e74c3c",
+        "frequency": 60,
+        "operatingHours": {
+            "start": 5,
+            "end": 21
+        },
+        "stops": [
+            {
+                "name": "Gare Agha",
+                "lat": 36.765,
+                "lng": 3.055,
+                "timeFromStart": 0
+            },
+            {
+                "name": "Blida Gare",
+                "lat": 36.470,
+                "lng": 2.829,
+                "timeFromStart": 60
+            }
+        ]
+    }
+]
