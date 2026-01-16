@@ -2,7 +2,7 @@ import json
 import sys
 
 try:
-    with open(r'c:\Users\anisk\Documents\transit\src\data\alger_stops.json', 'r', encoding='utf-8') as f:
+    with open(r'c:\Users\anisk\Documents\transit\public\alger_stops.json', 'r', encoding='utf-8') as f:
         json.load(f)
     print("JSON is valid.")
 except Exception as e:

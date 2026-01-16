@@ -1,41 +1,62 @@
+// ============================================================================
+// FICHIER: TransitUI.jsx
+// ROLE: Le coeur de l'interaction. C'est le panneau blanc/noir qui glisse en bas de l'écran.
+// Il gère : Recherche, Liste des lignes, Détails d'un bus, Calcul d'itinéraire.
+// ============================================================================
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Navigation, ArrowLeft, ArrowRightLeft, MapPin, MoreHorizontal, Search, User, Wifi } from 'lucide-react';
-import { findRoutes } from '../utils/routing';
+import { findRoutes } from '../utils/routing'; // Notre algorythme de GPS
 
 const TransitUI = ({ searchCenter, userLocation, transitData }) => {
-    // --- STATE MACHINE ---
+
+    // ------------------------------------------------------------------------
+    // MACHINE A ETATS (STATE MACHINE)
+    // Au lieu de pleins de variables booléennes (isSearching, hasSelectedLine...),
+    // on utilise une seule variable 'mode' pour savoir dans quel écran on est.
+    // ------------------------------------------------------------------------
+    // Modes possibles : 'HOME', 'LINE_DETAILS', 'ROUTING_RESULTS', 'TRIP_PLAN'
     const [mode, setMode] = useState('HOME');
 
-    // Data Buckets
-    const [nearbyLines, setNearbyLines] = useState([]);
-    const [selectedLine, setSelectedLine] = useState(null);
-    const [directions, setDirections] = useState({}); // { lineId: boolean (isReversed) }
-    const [tripPlan, setTripPlan] = useState(null);
-    const [routeResults, setRouteResults] = useState([]);
+    // ------------------------------------------------------------------------
+    // DONNÉES (DATA BUCKETS)
+    // ------------------------------------------------------------------------
+    const [nearbyLines, setNearbyLines] = useState([]); // Lignes proches à afficher
+    const [selectedLine, setSelectedLine] = useState(null); // La ligne sur laquelle on a cliqué
+    const [directions, setDirections] = useState({}); // Sens de la ligne (Aller ou Retour ?) { [lineId]: true/false }
+    const [tripPlan, setTripPlan] = useState(null); // Détail du trajet choisi
+    const [routeResults, setRouteResults] = useState([]); // Liste des trajets trouvés par le GPS
 
-    // Search State
+    // Recherche
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState([]);
 
-    // UI State
-    const [sheetHeight, setSheetHeight] = useState(window.innerHeight * 0.4);
-    const [isDragging, setIsDragging] = useState(false);
-    const [startY, setStartY] = useState(0);
-    const [startH, setStartH] = useState(0);
+    // ------------------------------------------------------------------------
+    // GESTION DU PANNEAU GLISSANT (SHEET)
+    // ------------------------------------------------------------------------
+    const [sheetHeight, setSheetHeight] = useState(window.innerHeight * 0.4); // Hauteur actuelle du panneau
+    const [isDragging, setIsDragging] = useState(false); // Est-ce que l'utilisateur est en train de tirer le panneau ?
+    const [startY, setStartY] = useState(0); // Point de départ du doigt
+    const [startH, setStartH] = useState(0); // Hauteur au début du mouvement
 
-    const MIN_H = window.innerHeight * 0.15;
-    const MID_H = window.innerHeight * 0.4;
-    const MAX_H = window.innerHeight * 0.92;
+    // Les 3 hauteurs "aimantées" (Snap points)
+    const MIN_H = window.innerHeight * 0.15; // Petit (juste la barre de recherche)
+    const MID_H = window.innerHeight * 0.4;  // Moyen (liste des bus)
+    const MAX_H = window.innerHeight * 0.92; // Grand (tout l'écran)
 
-    // --- 1. DATA PROCESSING ---
+    // ------------------------------------------------------------------------
+    // 1. TRAITEMENT DES DONNEES (Quand la position change)
+    // ------------------------------------------------------------------------
     useEffect(() => {
+        // On prend le centre de recherche, ou la position user, ou Alger par défaut
         const center = searchCenter || userLocation || { lat: 36.7525, lng: 3.0420 };
 
         if (transitData) {
+            // On trie les lignes pour afficher les plus proches en premier
             const sorted = transitData.map(line => {
                 if (!line.stops) return { ...line, distance: 9999, nextDepartures: ['--'], closestStopName: '?' };
 
-                // Find Closest Stop context
+                // Trouver l'arrêt le plus proche sur cette ligne
                 let minStopDist = 9999;
                 let closestStop = line.stops[0];
 
@@ -51,8 +72,8 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
                     }
                 });
 
-                // Mock Timetable
-                const dep1 = Math.floor(Math.random() * 10) + 2;
+                // Simulation des horaires (Mock)
+                const dep1 = Math.floor(Math.random() * 10) + 2; // Entre 2 et 12 min
                 const dep2 = dep1 + Math.floor(Math.random() * 15) + 5;
 
                 return {
@@ -61,45 +82,52 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
                     closestStopName: closestStop.name,
                     nextDepartures: [dep1, dep2]
                 };
-            }).sort((a, b) => a.distance - b.distance);
+            }).sort((a, b) => a.distance - b.distance); // Tri par distance croissante
 
             setNearbyLines(sorted);
         }
     }, [searchCenter, userLocation, transitData]);
 
-    // --- 2. SEARCH & ROUTING ---
+    // ------------------------------------------------------------------------
+    // 2. RECHERCHE ET ROUTING
+    // ------------------------------------------------------------------------
     useEffect(() => {
+        // Autocomplétion quand on tape dans la barre
         if (searchQuery.length > 1) {
             const matches = [];
             transitData.forEach(line => {
                 line.stops?.forEach(stop => {
+                    // On cherche si le nom de l'arrêt contient le texte tapé
                     if (stop.name.toLowerCase().includes(searchQuery.toLowerCase()) && !matches.find(m => m.name === stop.name)) {
                         matches.push({ type: 'stop', name: stop.name, lat: stop.lat, lng: stop.lng, subtitle: `Arrêt • ${line.name}` });
                     }
                 });
             });
+            // Des faux lieux pour la démo
             if ("maison".includes(searchQuery.toLowerCase())) matches.push({ type: 'place', name: 'Maison', lat: 36.7529, lng: 3.0420, subtitle: 'Domicile' });
             if ("fac".includes(searchQuery.toLowerCase())) matches.push({ type: 'place', name: 'Université', lat: 36.7118, lng: 3.1805, subtitle: 'USTHB' });
 
-            setSuggestions(matches.slice(0, 5));
-            setSheetHeight(MAX_H);
+            setSuggestions(matches.slice(0, 5)); // On garde max 5 résultats
+            setSheetHeight(MAX_H); // On ouvre le panneau en grand pour voir les résultats
         } else {
             setSuggestions([]);
         }
     }, [searchQuery, transitData]);
 
+    // Quand on clique sur une suggestion de recherche
     const handleSuggestionClick = (item) => {
         const start = userLocation || { lat: 36.7525, lng: 3.0420 };
         const end = { lat: item.lat, lng: item.lng };
 
+        // On lance le GPS ! (voir routing.js)
         let routes = findRoutes(start, end, transitData);
 
-        // --- FALLBACK FOR DEMO ---
-        // If strict routing fails (likely due to limited static data), generate a Mock Route 
-        // to ensure the user sees the UI flow they expect.
+        // --- FALLBACK DEMO ---
+        // Si le GPS ne trouve rien (car données incomplètes), on invente une route
+        // pour que l'utilisateur ne soit pas bloqué.
         if (!routes || routes.length === 0) {
             console.warn("No direct routes found. generating mock...");
-            const mockLine = transitData[0]; // Take first available line
+            const mockLine = transitData[0];
             if (mockLine) {
                 routes = [{
                     id: 'mock-route',
@@ -118,27 +146,33 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
         setRouteResults(routes);
         setSuggestions([]);
         setSearchQuery(item.name);
-        setMode('ROUTING_RESULTS');
+        setMode('ROUTING_RESULTS'); // On change d'écran -> Résultats
         setSheetHeight(MAX_H);
     };
 
-    // --- 3. UI HANDLERS ---
+    // ------------------------------------------------------------------------
+    // 3. GESTION DES CLICS UTILISATEUR
+    // ------------------------------------------------------------------------
     const handleLineClick = (line) => {
         setSelectedLine(line);
-        setMode('LINE_DETAILS');
+        setMode('LINE_DETAILS'); // On affiche le détail de la ligne
         setSheetHeight(MID_H);
     };
 
+    // Calcule le nom de la destination (Terminus) selon le sens de la ligne
     const getDestination = (line) => {
         if (!line) return '';
         const isReversed = directions[line.id] || false;
         const parts = line.longName.split('<->');
         if (parts.length < 2) return line.longName;
+        // Si sens inverse, on prend la partie gauche, sinon droite (dépend du format des données)
         return isReversed ? parts[0].trim() : parts[1].trim();
     };
 
-    // --- SWIPE LOGIC ---
-    // We need a separate component for Swipeable items to manage touch state locally
+    // ----------------------------------------------------------------
+    // COMPOSANT INTERNE : Ligne Balayable (Swipeable)
+    // Permet de glisser le doigt sur une ligne pour changer son sens
+    // ----------------------------------------------------------------
     const SwipeableLineItem = ({ line, onClick, onToggleDirection, isReversed }) => {
         const [touchStart, setTouchStart] = useState(null);
         const [offset, setOffset] = useState(0);
@@ -148,18 +182,18 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
             if (!touchStart) return;
             const current = e.targetTouches[0].clientX;
             const diff = current - touchStart;
-            // Limit slide to 100px for visual feedback
+            // On limite le glissement à 100px
             if (Math.abs(diff) < 100) setOffset(diff);
         };
         const onTouchEnd = () => {
-            if (Math.abs(offset) > 50) { // Threshold to trigger toggle
-                onToggleDirection(line.id);
+            if (Math.abs(offset) > 50) { // Si on a glissé assez loin (>50px)
+                onToggleDirection(line.id); // On déclenche l'action (Changer Sens)
             }
-            setOffset(0);
+            setOffset(0); // On remet à zéro
             setTouchStart(null);
         };
 
-        const destination = getDestination({ ...line }); // Apply current direction context
+        const destination = getDestination({ ...line });
 
         return (
             <div
@@ -168,7 +202,10 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
                 onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
                 style={{ transform: `translateX(${offset}px)`, transition: touchStart ? 'none' : 'transform 0.3s' }}
             >
+                {/* Icône Carrée de la ligne */}
                 <div className="line-icon" style={{ background: line.color }}>{line.name}</div>
+
+                {/* Infos Texte */}
                 <div className="line-info">
                     <div className="line-dest">{line.closestStopName}</div>
                     <div className="line-dist" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -176,6 +213,8 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
                         Vers {destination}
                     </div>
                 </div>
+
+                {/* Temps restant (Radar) */}
                 <div className="line-time-container">
                     <Wifi size={14} className="radar-icon" color={line.color} />
                     <span className="time-primary" style={{ color: line.color }}>{line.nextDepartures[0]} <span style={{ fontSize: '12px' }}>min</span></span>
@@ -189,10 +228,11 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
         setDirections(prev => ({ ...prev, [lineId]: !prev[lineId] }));
     };
 
-
+    // Lance un itinéraire "GO"
     const handleGoClick = () => {
         if (!selectedLine) return;
         const isReversed = directions[selectedLine.id];
+        // On inverse la liste des arrêts si besoin
         const currentStops = isReversed ? [...selectedLine.stops].reverse() : selectedLine.stops;
 
         setTripPlan({
@@ -208,8 +248,8 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
         setSheetHeight(MAX_H);
     };
 
+    // Quand on clique sur un arrêt dans la liste
     const handleStopClick = (stop) => {
-        // ... (similar logic for Stop Click, omitted for brevity but functionality preserved)
         if (!selectedLine) return;
         const isReversed = directions[selectedLine.id];
         const currentStops = isReversed ? [...selectedLine.stops].reverse() : selectedLine.stops;
@@ -227,23 +267,40 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
         setSheetHeight(MAX_H);
     };
 
+    // Bouton Retour
     const handleBack = () => {
         if (mode === 'TRIP_PLAN') setMode('LINE_DETAILS');
         else if (mode === 'LINE_DETAILS') { setSelectedLine(null); setMode('HOME'); setSheetHeight(MID_H); }
         else if (mode === 'ROUTING_RESULTS') { setRouteResults([]); setMode('HOME'); setSearchQuery(''); setSheetHeight(MID_H); }
     };
 
-    // --- DRAG HANDLERS ---
+    // ------------------------------------------------------------------------
+    // GESTION DU GLISSEMENT VERTICAL DU PANNEAU (Drag & Drop)
+    // ------------------------------------------------------------------------
     const handleTouchStart = (e) => { setIsDragging(true); setStartY(e.touches[0].clientY); setStartH(sheetHeight); };
-    const handleTouchMove = (e) => { if (!isDragging) return; const delta = startY - e.touches[0].clientY; const newH = startH + delta; if (newH > MIN_H && newH < MAX_H) setSheetHeight(newH); };
-    const handleTouchEnd = () => { setIsDragging(false); if (sheetHeight > (MID_H + MAX_H) / 2) setSheetHeight(MAX_H); else if (sheetHeight > (MIN_H + MID_H) / 2) setSheetHeight(MID_H); else setSheetHeight(MIN_H); };
+    const handleTouchMove = (e) => {
+        if (!isDragging) return;
+        const delta = startY - e.touches[0].clientY; // Inversé car Y augmente vers le bas
+        const newH = startH + delta;
+        if (newH > MIN_H && newH < MAX_H) setSheetHeight(newH);
+    };
+    const handleTouchEnd = () => {
+        setIsDragging(false);
+        // Aimantation vers le snap point le plus proche
+        if (sheetHeight > (MID_H + MAX_H) / 2) setSheetHeight(MAX_H);
+        else if (sheetHeight > (MIN_H + MID_H) / 2) setSheetHeight(MID_H);
+        else setSheetHeight(MIN_H);
+    };
 
-    // --- RENDERERS ---
+    // ------------------------------------------------------------------------
+    // RENDU DU CONTENU (Swich selon le mode)
+    // ------------------------------------------------------------------------
     const renderContent = () => {
+        // MODE ACCUEIL
         if (mode === 'HOME') {
             return (
                 <div className="scroll-content">
-                    {/* Header */}
+                    {/* Header avec Barre de recherche */}
                     <div style={{ padding: '0 16px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
                         <div style={{ background: '#2c2c2e', borderRadius: '12px', padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2ecc71' }} />
@@ -255,6 +312,7 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
                                 onFocus={() => setSheetHeight(MAX_H)}
                             />
                         </div>
+                        {/* Liste des suggestions d'autocomplétion */}
                         {suggestions.length > 0 && (
                             <div style={{ background: '#2c2c2e', marginTop: '8px', borderRadius: '12px', overflow: 'hidden' }}>
                                 {suggestions.map((s, i) => (
@@ -279,6 +337,8 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
                 </div>
             );
         }
+
+        // MODE DETAIL LIGNE
         if (mode === 'LINE_DETAILS' && selectedLine) {
             const isReversed = directions[selectedLine.id];
             const currentStops = isReversed ? [...selectedLine.stops].reverse() : selectedLine.stops;
@@ -286,6 +346,7 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
 
             return (
                 <div className="scroll-content">
+                    {/* Barre Retour */}
                     <div className="header-bar">
                         <ArrowLeft color="white" onClick={handleBack} />
                         <div style={{ flex: 1 }}>
@@ -296,12 +357,14 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
                             <ArrowRightLeft size={20} color="white" />
                         </div>
                     </div>
+                    {/* Gros Compteur Temps */}
                     <div className="big-time-display">
                         <Wifi size={24} className="radar-icon-big" color={selectedLine.color} />
                         <div className="time-val" style={{ color: selectedLine.color }}>{selectedLine.nextDepartures[0]}<span style={{ fontSize: '20px' }}>min</span></div>
                         <div style={{ color: '#888', marginBottom: '10px' }}>Prochain: {selectedLine.nextDepartures[1]} min</div>
                         <div className="go-btn" onClick={handleGoClick}>GO</div>
                     </div>
+                    {/* Liste des arrêts (Thermomètre) */}
                     <div className="stops-list">
                         <div className="timeline-line" style={{ background: selectedLine.color }} />
                         {currentStops.map((stop, i) => (
@@ -314,6 +377,8 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
                 </div>
             );
         }
+
+        // MODE RESULTATS RECHERCHE
         if (mode === 'ROUTING_RESULTS') {
             return (
                 <div className="scroll-content">
@@ -332,7 +397,7 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
                                 ],
                                 startTime: new Date()
                             });
-                            setMode('TRIP_PLAN');
+                            setMode('TRIP_PLAN'); // Vers mode navigation
                         }}>
                             <div className="route-header">
                                 <div className="line-badge" style={{ background: r.line.color }}>{r.line.name}</div>
@@ -344,24 +409,28 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
                 </div>
             );
         }
-        return null;
+        return null; // Si TripPlan (non implémenté visuellement ici pour simplifier le snippet)
     };
 
-    const isLight = mode === 'TRIP_PLAN';
+    const isLight = mode === 'TRIP_PLAN'; // Mode clair pour la navigation GPS
 
     return (
         <div className="sheet-container" style={{ height: sheetHeight, background: isLight ? '#fff' : '#1c1c1e' }}>
+            {/* Poignée de redimensionnement */}
             <div onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
                 style={{ width: '100%', padding: '10px 0', display: 'flex', justifyContent: 'center', cursor: 'grab', flexShrink: 0, touchAction: 'none' }}>
                 <div style={{ width: '40px', height: '5px', background: 'rgba(255,255,255,0.2)', borderRadius: '3px' }} />
             </div>
+
             {renderContent()}
+
+            {/* Injections de style CSS interne au composant (CSS-in-JS) */}
             <StyleBlock light={isLight} isDragging={isDragging} />
         </div>
     );
 };
 
-// --- STYLES ---
+// --- STYLES CSS (Mis ici pour garder le fichier auto-suffisant) ---
 const StyleBlock = ({ light, isDragging }) => (
     <style>{`
         .sheet-container {
@@ -370,8 +439,16 @@ const StyleBlock = ({ light, isDragging }) => (
             border-top-left-radius: 20px; border-top-right-radius: 20px;
             box-shadow: 0 -5px 30px rgba(0,0,0,0.5);
             display: flex; flex-direction: column; overflow: hidden;
+            /* Animation fluide sauf si on drag */
             transition: ${isDragging ? 'none' : 'height 0.6s cubic-bezier(0.19, 1, 0.22, 1)'};
             z-index: 2000; font-family: 'Inter', sans-serif; will-change: height;
+        }
+
+        /* Responsive Desktop */
+        @media (min-width: 768px) {
+            .sheet-container {
+                left: 20px; right: auto; width: 400px; bottom: 20px; border-radius: 20px;
+            }
         }
         .scroll-content { flex: 1; overflow-y: auto; padding-bottom: 40px; }
         
@@ -385,7 +462,7 @@ const StyleBlock = ({ light, isDragging }) => (
         .time-primary { font-size: 20px; font-weight: 800; display: flex; align-items: baseline; gap: 2px; }
         .time-secondary { font-size: 14px; color: #666; font-weight: 600; }
         
-        /* Radar Animation */
+        /* Animation Radar pour le temps réel */
         @keyframes pulse-radar { 0% { opacity: 0.4; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.4; transform: scale(0.9); } }
         .radar-icon { animation: pulse-radar 2s infinite ease-in-out; margin-right: 4px; opacity: 0.8; }
         .radar-icon-big { animation: pulse-radar 2s infinite ease-in-out; margin-right: 8px; opacity: 1; margin-bottom: -4px; }
@@ -406,3 +483,4 @@ const StyleBlock = ({ light, isDragging }) => (
 );
 
 export default TransitUI;
+

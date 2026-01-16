@@ -52,6 +52,9 @@ const Onboarding = ({ onComplete }) => {
                     <button className="btn-primary" onClick={handleStart}>
                         Commencer
                     </button>
+                    <div style={{ marginTop: '16px', color: '#666', fontSize: '14px', cursor: 'pointer' }} onClick={() => onComplete(null)}>
+                        Plus tard
+                    </div>
                 </div>
             )}
 
