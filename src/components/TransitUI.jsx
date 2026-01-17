@@ -1,62 +1,47 @@
 // ============================================================================
 // FICHIER: TransitUI.jsx
-// ROLE: Le coeur de l'interaction. C'est le panneau blanc/noir qui glisse en bas de l'écran.
-// Il gère : Recherche, Liste des lignes, Détails d'un bus, Calcul d'itinéraire.
+// ROLE: Le coeur de l'interaction. Panneau "Bottom Sheet" premium.
 // ============================================================================
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Navigation, ArrowLeft, ArrowRightLeft, MapPin, MoreHorizontal, Search, User, Wifi } from 'lucide-react';
-import { findRoutes } from '../utils/routing'; // Notre algorythme de GPS
+import { Navigation, ArrowLeft, ArrowRightLeft, MapPin, Search, Wifi, Clock, ChevronUp, Crown, Home, Briefcase, Calendar, ChevronRight, Bus, TramFront, TrainFront, Plane } from 'lucide-react';
+import { findRoutes } from '../utils/routing';
+import { EtusaClient } from '../services/EtusaClient';
 
 const TransitUI = ({ searchCenter, userLocation, transitData }) => {
 
-    // ------------------------------------------------------------------------
-    // MACHINE A ETATS (STATE MACHINE)
-    // Au lieu de pleins de variables booléennes (isSearching, hasSelectedLine...),
-    // on utilise une seule variable 'mode' pour savoir dans quel écran on est.
-    // ------------------------------------------------------------------------
-    // Modes possibles : 'HOME', 'LINE_DETAILS', 'ROUTING_RESULTS', 'TRIP_PLAN'
-    const [mode, setMode] = useState('HOME');
-
-    // ------------------------------------------------------------------------
-    // DONNÉES (DATA BUCKETS)
-    // ------------------------------------------------------------------------
-    const [nearbyLines, setNearbyLines] = useState([]); // Lignes proches à afficher
-    const [selectedLine, setSelectedLine] = useState(null); // La ligne sur laquelle on a cliqué
-    const [directions, setDirections] = useState({}); // Sens de la ligne (Aller ou Retour ?) { [lineId]: true/false }
-    const [tripPlan, setTripPlan] = useState(null); // Détail du trajet choisi
-    const [routeResults, setRouteResults] = useState([]); // Liste des trajets trouvés par le GPS
-
-    // Recherche
+    // --- ETATS ---
+    const [mode, setMode] = useState('HOME'); // 'HOME', 'LINE_DETAILS', 'ROUTING_RESULTS', 'TRIP_PLAN'
+    const [nearbyLines, setNearbyLines] = useState([]);
+    const [selectedLine, setSelectedLine] = useState(null);
+    const [directions, setDirections] = useState({});
+    const [realTimeSchedule, setRealTimeSchedule] = useState({}); // { stopName: DateObject }
+    const [ticker, setTicker] = useState(new Date()); // Updates every minute
+    const [tripPlan, setTripPlan] = useState(null);
+    const [routeResults, setRouteResults] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [suggestions, setSuggestions] = useState([]);
+    const [isSearchActive, setIsSearchActive] = useState(false);
+    const [isCalculating, setIsCalculating] = useState(false); // UI Loading State
 
-    // ------------------------------------------------------------------------
-    // GESTION DU PANNEAU GLISSANT (SHEET)
-    // ------------------------------------------------------------------------
-    const [sheetHeight, setSheetHeight] = useState(window.innerHeight * 0.4); // Hauteur actuelle du panneau
-    const [isDragging, setIsDragging] = useState(false); // Est-ce que l'utilisateur est en train de tirer le panneau ?
-    const [startY, setStartY] = useState(0); // Point de départ du doigt
-    const [startH, setStartH] = useState(0); // Hauteur au début du mouvement
+    // --- GESTION DU BOTTOM SHEET ---
+    // On utilise des valeurs en pixel pour plus de précision (vs VH)
+    const SCREEN_H = window.innerHeight;
+    const SNAP_MIN = SCREEN_H * 0.15; // Petit (Recherche)
+    const SNAP_MID = SCREEN_H * 0.45; // Moyen (Liste)
+    const SNAP_MAX = SCREEN_H * 0.95; // Grand (Plein écran)
 
-    // Les 3 hauteurs "aimantées" (Snap points)
-    const MIN_H = window.innerHeight * 0.15; // Petit (juste la barre de recherche)
-    const MID_H = window.innerHeight * 0.4;  // Moyen (liste des bus)
-    const MAX_H = window.innerHeight * 0.92; // Grand (tout l'écran)
+    const [sheetHeight, setSheetHeight] = useState(SNAP_MID);
+    const [isDragging, setIsDragging] = useState(false);
+    const dragStartY = useRef(0);
+    const dragStartH = useRef(0);
 
-    // ------------------------------------------------------------------------
-    // 1. TRAITEMENT DES DONNEES (Quand la position change)
-    // ------------------------------------------------------------------------
+    // --- 1. DATA PROCESSING ---
     useEffect(() => {
-        // On prend le centre de recherche, ou la position user, ou Alger par défaut
         const center = searchCenter || userLocation || { lat: 36.7525, lng: 3.0420 };
-
         if (transitData) {
-            // On trie les lignes pour afficher les plus proches en premier
             const sorted = transitData.map(line => {
                 if (!line.stops) return { ...line, distance: 9999, nextDepartures: ['--'], closestStopName: '?' };
-
-                // Trouver l'arrêt le plus proche sur cette ligne
                 let minStopDist = 9999;
                 let closestStop = line.stops[0];
 
@@ -66,311 +51,590 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
                     const dLon = (s.lng - center.lng) * (Math.PI / 180);
                     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(center.lat * (Math.PI / 180)) * Math.cos(s.lat * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
                     const d = R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-                    if (d < minStopDist) {
-                        minStopDist = d;
-                        closestStop = s;
-                    }
+                    if (d < minStopDist) { minStopDist = d; closestStop = s; }
                 });
-
-                // Simulation des horaires (Mock)
-                const dep1 = Math.floor(Math.random() * 10) + 2; // Entre 2 et 12 min
-                const dep2 = dep1 + Math.floor(Math.random() * 15) + 5;
-
+                // Mock horaires intelligents
+                const baseTime = Math.floor(Math.random() * 8) + 1;
                 return {
                     ...line,
                     distance: minStopDist,
                     closestStopName: closestStop.name,
-                    nextDepartures: [dep1, dep2]
+                    nextDepartures: [baseTime, baseTime + 12]
                 };
-            }).sort((a, b) => a.distance - b.distance); // Tri par distance croissante
-
+            }).sort((a, b) => a.distance - b.distance);
             setNearbyLines(sorted);
         }
     }, [searchCenter, userLocation, transitData]);
 
-    // ------------------------------------------------------------------------
-    // 2. RECHERCHE ET ROUTING
-    // ------------------------------------------------------------------------
+    // --- 1.5 REAL TIME SCHEDULE LOGIC ---
+    // A. Ticker to update "Now" every minute
     useEffect(() => {
-        // Autocomplétion quand on tape dans la barre
-        if (searchQuery.length > 1) {
-            const matches = [];
-            transitData.forEach(line => {
-                line.stops?.forEach(stop => {
-                    // On cherche si le nom de l'arrêt contient le texte tapé
-                    if (stop.name.toLowerCase().includes(searchQuery.toLowerCase()) && !matches.find(m => m.name === stop.name)) {
-                        matches.push({ type: 'stop', name: stop.name, lat: stop.lat, lng: stop.lng, subtitle: `Arrêt • ${line.name}` });
-                    }
+        const timer = setInterval(() => setTicker(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    // B. Calculate Schedule (Targets)
+    useEffect(() => {
+        if (mode === 'LINE_DETAILS' && selectedLine) {
+            const fetchRealTime = async () => {
+                const now = new Date();
+                // Start 2 mins from now
+                const startTime = new Date(now.getTime() + 2 * 60000);
+
+                // 2. Extrapolate
+                const newSchedule = {};
+                const conststops = directions[selectedLine.id] ? [...selectedLine.stops].reverse() : selectedLine.stops;
+
+                conststops.forEach((stop, index) => {
+                    // +3 mins per stop
+                    const arrivalTime = new Date(startTime.getTime() + (index * 3 * 60000));
+                    newSchedule[stop.name] = arrivalTime;
                 });
-            });
-            // Des faux lieux pour la démo
-            if ("maison".includes(searchQuery.toLowerCase())) matches.push({ type: 'place', name: 'Maison', lat: 36.7529, lng: 3.0420, subtitle: 'Domicile' });
-            if ("fac".includes(searchQuery.toLowerCase())) matches.push({ type: 'place', name: 'Université', lat: 36.7118, lng: 3.1805, subtitle: 'USTHB' });
 
-            setSuggestions(matches.slice(0, 5)); // On garde max 5 résultats
-            setSheetHeight(MAX_H); // On ouvre le panneau en grand pour voir les résultats
-        } else {
-            setSuggestions([]);
+                setRealTimeSchedule(newSchedule);
+            };
+            fetchRealTime();
         }
-    }, [searchQuery, transitData]);
+    }, [mode, selectedLine, directions]);
 
-    // Quand on clique sur une suggestion de recherche
-    const handleSuggestionClick = (item) => {
+    // Helper: Format Countdown
+    const getCountdown = (targetDate) => {
+        if (!targetDate) return "";
+        const diffMs = targetDate - ticker;
+        const diffMins = Math.ceil(diffMs / 60000);
+
+        if (diffMins <= 0) return "À l'instant";
+        if (diffMins > 60) return targetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).replace(':', 'h'); // Absolute if long
+        return `Dans ${diffMins} min`;
+    };
+
+
+    // --- 2. SEARCH LOGIC ---
+    // --- 2. SEARCH LOGIC (Server-Side) ---
+    useEffect(() => {
+        const performSearch = async () => {
+            if (searchQuery.length > 1) {
+                const normalize = str => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const query = normalize(searchQuery);
+
+                const matches = [];
+
+                // 1. Search in Hydrated Transit Data
+                transitData.forEach(line => {
+                    // Search Lines
+
+                    const lName = normalize(line.name);
+                    const lLongName = normalize(line.longName || "");
+                    const lFullName = `ligne ${lName}`;
+
+                    if ((lName.includes(query) || lLongName.includes(query) || lFullName.includes(query)) && !matches.find(m => m.id === line.id)) {
+                        matches.push({ type: 'line', id: line.id, name: `Ligne ${line.name}`, lat: null, lng: null, subtitle: line.longName, data: line });
+                    }
+
+                    // Search Stops
+                    line.stops?.forEach(stop => {
+                        if (normalize(stop.name).includes(query) && !matches.find(m => m.name === stop.name)) {
+                            matches.push({ type: 'stop', name: stop.name, lat: stop.lat, lng: stop.lng, subtitle: `Arrêt • ${line.name}` });
+                        }
+                    });
+                });
+
+                // 2. Add Local Shortcuts
+                if ("maison".includes(query)) matches.push({ type: 'place', name: 'Maison', lat: 36.7529, lng: 3.0420, subtitle: 'Domicile' });
+                if ("fac".includes(query) || "université".includes(query)) matches.push({ type: 'place', name: 'Université', lat: 36.7118, lng: 3.1805, subtitle: 'USTHB' });
+
+                setSuggestions(matches.slice(0, 8));
+                if (matches.length > 0 && sheetHeight < SNAP_MAX) setSheetHeight(SNAP_MAX);
+            } else {
+                setSuggestions([]);
+            }
+
+        };
+        const timeoutId = setTimeout(performSearch, 300); // Debounce 300ms
+        return () => clearTimeout(timeoutId);
+    }, [searchQuery, sheetHeight]);
+
+    // --- 3. INTERACTIONS ---
+    const handleSuggestionClick = async (item) => {
+        // CASE A: Line Selected -> Go to Line Details
+        if (item.type === 'line' && item.data) {
+            handleLineClick(item.data);
+            setSuggestions([]);
+            setSearchQuery(item.name);
+            return;
+        }
+
+        // CASE B: Stop/Place Selected -> Routing
         const start = userLocation || { lat: 36.7525, lng: 3.0420 };
         const end = { lat: item.lat, lng: item.lng };
 
-        // On lance le GPS ! (voir routing.js)
-        let routes = findRoutes(start, end, transitData);
+        setIsCalculating(true);
+        setMode('ROUTING_RESULTS');
+        setRouteResults([]); // Clear previous
 
-        // --- FALLBACK DEMO ---
-        // Si le GPS ne trouve rien (car données incomplètes), on invente une route
-        // pour que l'utilisateur ne soit pas bloqué.
-        if (!routes || routes.length === 0) {
-            console.warn("No direct routes found. generating mock...");
-            const mockLine = transitData[0];
-            if (mockLine) {
-                routes = [{
-                    id: 'mock-route',
-                    line: mockLine,
-                    startStop: mockLine.stops[0],
-                    endStop: mockLine.stops[2] || mockLine.stops[1],
-                    walkToStart: 5,
-                    transitDuration: 15,
-                    walkFromEnd: 8,
-                    totalDuration: 28,
-                    score: 10
-                }];
+        try {
+            // CALL DISPATCHER (A* ALGORITHM)
+            let routes = await findRoutes(start, end, transitData);
+
+            if (!routes || routes.length === 0) {
+                console.warn("A* returned no path. Using direct mock.");
+                const mockLine = transitData[0];
+                if (mockLine && mockLine.stops && mockLine.stops.length > 0) {
+                    routes = [{
+                        id: 'mock-fail-a-star', line: mockLine, startStop: mockLine.stops[0], endStop: mockLine.stops[mockLine.stops.length - 1],
+                        walkToStart: 4, transitDuration: 18, walkFromEnd: 6, totalDuration: 28, score: 10,
+                        segments: [{ type: 'WALK', duration: 4 }, { type: 'BUS', line: mockLine.name, color: mockLine.color, duration: 18 }, { type: 'WALK', duration: 6 }]
+                    }];
+                }
             }
-        }
+            setRouteResults(routes || []);
+            setSheetHeight(SNAP_MAX);
 
-        setRouteResults(routes);
-        setSuggestions([]);
-        setSearchQuery(item.name);
-        setMode('ROUTING_RESULTS'); // On change d'écran -> Résultats
-        setSheetHeight(MAX_H);
+        } catch (e) {
+            console.error("Routing Error:", e);
+            setRouteResults([]);
+        } finally {
+            setIsCalculating(false);
+            setSuggestions([]);
+            setSearchQuery(item.name);
+        }
     };
 
-    // ------------------------------------------------------------------------
-    // 3. GESTION DES CLICS UTILISATEUR
-    // ------------------------------------------------------------------------
+
     const handleLineClick = (line) => {
         setSelectedLine(line);
-        setMode('LINE_DETAILS'); // On affiche le détail de la ligne
-        setSheetHeight(MID_H);
+        setMode('LINE_DETAILS');
+        setSheetHeight(SNAP_MID);
     };
 
-    // Calcule le nom de la destination (Terminus) selon le sens de la ligne
-    const getDestination = (line) => {
-        if (!line) return '';
-        const isReversed = directions[line.id] || false;
-        const parts = line.longName.split('<->');
-        if (parts.length < 2) return line.longName;
-        // Si sens inverse, on prend la partie gauche, sinon droite (dépend du format des données)
-        return isReversed ? parts[0].trim() : parts[1].trim();
-    };
-
-    // ----------------------------------------------------------------
-    // COMPOSANT INTERNE : Ligne Balayable (Swipeable)
-    // Permet de glisser le doigt sur une ligne pour changer son sens
-    // ----------------------------------------------------------------
-    const SwipeableLineItem = ({ line, onClick, onToggleDirection, isReversed }) => {
-        const [touchStart, setTouchStart] = useState(null);
-        const [offset, setOffset] = useState(0);
-
-        const onTouchStart = (e) => setTouchStart(e.targetTouches[0].clientX);
-        const onTouchMove = (e) => {
-            if (!touchStart) return;
-            const current = e.targetTouches[0].clientX;
-            const diff = current - touchStart;
-            // On limite le glissement à 100px
-            if (Math.abs(diff) < 100) setOffset(diff);
-        };
-        const onTouchEnd = () => {
-            if (Math.abs(offset) > 50) { // Si on a glissé assez loin (>50px)
-                onToggleDirection(line.id); // On déclenche l'action (Changer Sens)
-            }
-            setOffset(0); // On remet à zéro
-            setTouchStart(null);
-        };
-
-        const destination = getDestination({ ...line });
-
-        return (
-            <div
-                className="line-item"
-                onClick={() => onClick(line)}
-                onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}
-                style={{ transform: `translateX(${offset}px)`, transition: touchStart ? 'none' : 'transform 0.3s' }}
-            >
-                {/* Icône Carrée de la ligne */}
-                <div className="line-icon" style={{ background: line.color }}>{line.name}</div>
-
-                {/* Infos Texte */}
-                <div className="line-info">
-                    <div className="line-dest">{line.closestStopName}</div>
-                    <div className="line-dist" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {isReversed && <ArrowRightLeft size={12} color="#888" />}
-                        Vers {destination}
-                    </div>
-                </div>
-
-                {/* Temps restant (Radar) */}
-                <div className="line-time-container">
-                    <Wifi size={14} className="radar-icon" color={line.color} />
-                    <span className="time-primary" style={{ color: line.color }}>{line.nextDepartures[0]} <span style={{ fontSize: '12px' }}>min</span></span>
-                    <span className="time-secondary">{line.nextDepartures[1]}</span>
-                </div>
-            </div>
-        )
-    };
-
-    const toggleLineDirection = (lineId) => {
+    const toggleLineDirection = (lineId, e) => {
+        e.stopPropagation();
         setDirections(prev => ({ ...prev, [lineId]: !prev[lineId] }));
     };
 
-    // Lance un itinéraire "GO"
-    const handleGoClick = () => {
-        if (!selectedLine) return;
-        const isReversed = directions[selectedLine.id];
-        // On inverse la liste des arrêts si besoin
-        const currentStops = isReversed ? [...selectedLine.stops].reverse() : selectedLine.stops;
-
-        setTripPlan({
-            line: selectedLine,
-            segments: [
-                { type: 'WALK', label: 'Vers l\'arrêt', time: '5 min' },
-                { type: 'BUS', label: `Ligne ${selectedLine.name}`, from: currentStops[0].name, to: currentStops[currentStops.length - 1].name, time: '25 min', color: selectedLine.color },
-                { type: 'WALK', label: 'Vers destination', time: '5 min' }
-            ],
-            startTime: new Date()
-        });
-        setMode('TRIP_PLAN');
-        setSheetHeight(MAX_H);
-    };
-
-    // Quand on clique sur un arrêt dans la liste
-    const handleStopClick = (stop) => {
-        if (!selectedLine) return;
-        const isReversed = directions[selectedLine.id];
-        const currentStops = isReversed ? [...selectedLine.stops].reverse() : selectedLine.stops;
-
-        setTripPlan({
-            line: selectedLine,
-            segments: [
-                { type: 'WALK', label: 'Vers l\'arrêt', time: '5 min' },
-                { type: 'BUS', label: `Ligne ${selectedLine.name}`, from: currentStops[0].name, to: stop.name, time: '15 min', color: selectedLine.color },
-                { type: 'WALK', label: 'Arrivée', time: '0 min' }
-            ],
-            startTime: new Date()
-        });
-        setMode('TRIP_PLAN');
-        setSheetHeight(MAX_H);
-    };
-
-    // Bouton Retour
     const handleBack = () => {
         if (mode === 'TRIP_PLAN') setMode('LINE_DETAILS');
-        else if (mode === 'LINE_DETAILS') { setSelectedLine(null); setMode('HOME'); setSheetHeight(MID_H); }
-        else if (mode === 'ROUTING_RESULTS') { setRouteResults([]); setMode('HOME'); setSearchQuery(''); setSheetHeight(MID_H); }
+        else if (mode === 'LINE_DETAILS') { setSelectedLine(null); setMode('HOME'); setSheetHeight(SNAP_MID); }
+        else if (mode === 'ROUTING_RESULTS') { setRouteResults([]); setMode('HOME'); setSearchQuery(''); setSheetHeight(SNAP_MID); }
     };
 
-    // ------------------------------------------------------------------------
-    // GESTION DU GLISSEMENT VERTICAL DU PANNEAU (Drag & Drop)
-    // ------------------------------------------------------------------------
-    const handleTouchStart = (e) => { setIsDragging(true); setStartY(e.touches[0].clientY); setStartH(sheetHeight); };
+    const handleGoClick = () => {
+        if (!selectedLine) return;
+
+        // Mock 3 Route Options similar to Transit App
+        const mockRoutes = [
+            {
+                id: 'r1',
+                duration: '42 min',
+                departure: '17:00',
+                arrival: '17:42',
+                crowd: 'low',
+                tags: ['Rapide'],
+                segments: [
+                    { type: 'WALK', duration: '8', color: '#888' },
+                    { type: 'BUS', duration: '25', color: selectedLine.color, line: selectedLine.name },
+                    { type: 'WALK', duration: '9', color: '#888' }
+                ]
+            },
+            {
+                id: 'r2',
+                duration: '56 min',
+                departure: '17:15',
+                arrival: '18:11',
+                crowd: 'med',
+                tags: [],
+                segments: [
+                    { type: 'WALK', duration: '12', color: '#888' },
+                    { type: 'BUS', duration: '44', color: '#9b59b6', line: '12A' }
+                ]
+            },
+            {
+                id: 'r3',
+                duration: '1 h 05',
+                departure: '17:05',
+                arrival: '18:10',
+                crowd: 'high',
+                tags: ['Moins de marche'],
+                segments: [
+                    { type: 'WALK', duration: '4', color: '#888' },
+                    { type: 'BUS', duration: '15', color: '#e67e22', line: '4' },
+                    { type: 'BUS', duration: '35', color: '#3498db', line: '88' },
+                    { type: 'WALK', duration: '11', color: '#888' }
+                ]
+            }
+        ];
+
+        setRouteResults(mockRoutes);
+        setMode('ROUTING_RESULTS');
+        setSheetHeight(SNAP_MAX);
+    };
+
+    const handleSeeAll = () => {
+        // Pour l'instant, on étend juste le panneau au maximum
+        setSheetHeight(SNAP_MAX);
+    };
+
+    const handleShortcut = (type) => {
+        if (type === 'HOME') handleSuggestionClick({ name: 'Maison', lat: 36.7529, lng: 3.0420 });
+        else if (type === 'WORK') handleSuggestionClick({ name: 'Travail', lat: 36.7118, lng: 3.1805 });
+        else if (type === 'EVENT') alert('Aucun événement à venir.');
+        else if (type === 'MAP') setIsSearchActive(false);
+    };
+
+    // --- 4. DRAG GESTURES (PHYSICS) ---
+    const handleTouchStart = (e) => {
+        setIsDragging(true);
+        dragStartY.current = e.touches[0].clientY;
+        dragStartH.current = sheetHeight;
+    };
+
     const handleTouchMove = (e) => {
         if (!isDragging) return;
-        const delta = startY - e.touches[0].clientY; // Inversé car Y augmente vers le bas
-        const newH = startH + delta;
-        if (newH > MIN_H && newH < MAX_H) setSheetHeight(newH);
+        const deltaY = dragStartY.current - e.touches[0].clientY;
+        const newH = dragStartH.current + deltaY;
+        // Résistance élastique aux bords
+        if (newH > SNAP_MAX + 50) return;
+        if (newH < SNAP_MIN - 20) return;
+        setSheetHeight(newH);
     };
+
     const handleTouchEnd = () => {
         setIsDragging(false);
-        // Aimantation vers le snap point le plus proche
-        if (sheetHeight > (MID_H + MAX_H) / 2) setSheetHeight(MAX_H);
-        else if (sheetHeight > (MIN_H + MID_H) / 2) setSheetHeight(MID_H);
-        else setSheetHeight(MIN_H);
+        // Snap logic améliorée
+        const h = sheetHeight;
+        if (h > (SNAP_MAX + SNAP_MID) / 2) setSheetHeight(SNAP_MAX);
+        else if (h > (SNAP_MID + SNAP_MIN) / 2) setSheetHeight(SNAP_MID);
+        else setSheetHeight(SNAP_MIN);
     };
 
-    // ------------------------------------------------------------------------
-    // RENDU DU CONTENU (Swich selon le mode)
-    // ------------------------------------------------------------------------
+    // --- COMPOSANTS UI INTERNES ---
+
+    // Helper pour l'icone de mode
+    const getModeIcon = (line, color = '#fff', size = 20) => {
+        if (!line) return null;
+        const type = line.type ? line.type.toLowerCase() : 'bus';
+        // Détection Aéroport
+        if ((line.longName && line.longName.toLowerCase().includes('aéroport')) || (line.name && line.name.toLowerCase().includes('aéroport')) || (line.originalData && line.originalData.nomLigne.toLowerCase().includes('aéroport'))) {
+            return <Plane size={size} color={color} />;
+        }
+
+        switch (type) {
+            case 'tram': return <TramFront size={size} color={color} />;
+            case 'metro': return <TrainFront size={size} color={color} />;
+            case 'bus': default: return <Bus size={size} color={color} />;
+        }
+    };
+
+    const LineCard = ({ line, onClick, isReversed, onToggle }) => {
+        const [translateX, setTranslateX] = useState(0);
+        const [startX, setStartX] = useState(null);
+
+        const handleTouchStart = (e) => {
+            // Empêcher le scroll vertical si on swipe horizontalement pourrait être complexe, 
+            // mais ici on suppose un swipe franc.
+            setStartX(e.touches[0].clientX);
+        };
+
+        const handleTouchMove = (e) => {
+            if (startX === null) return;
+            const currentX = e.touches[0].clientX;
+            const diff = currentX - startX;
+            // Limiter le déplacement visuel
+            if (Math.abs(diff) < 120) {
+                setTranslateX(diff);
+            }
+        };
+
+        const handleTouchEnd = (e) => {
+            // Seuil de déclenchement (80px)
+            if (Math.abs(translateX) > 80) {
+                // On déclenche le toggle
+                onToggle(line.id, e);
+                // Feedback haptique
+                if (navigator.vibrate) navigator.vibrate(50);
+            }
+            // Reset position avec animation
+            setTranslateX(0);
+            setStartX(null);
+        };
+
+        return (
+            <div className="glass-card" style={{ marginBottom: '12px', position: 'relative', overflow: 'hidden', background: '#000' }}>
+                {/* Indicateurs d'arrière-plan (révélés au swipe) */}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 20px', zIndex: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#2ecc71', fontWeight: 'bold', opacity: translateX > 30 ? (translateX / 80) : 0 }}>
+                        <ArrowRightLeft size={20} /> Changer
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#2ecc71', fontWeight: 'bold', opacity: translateX < -30 ? (Math.abs(translateX) / 80) : 0 }}>
+                        Changer <ArrowRightLeft size={20} />
+                    </div>
+                </div>
+
+                {/* Contenu de la carte (Glissant) */}
+                <div
+                    onClick={() => onClick(line)}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    style={{
+                        padding: '12px 16px', display: 'flex', alignItems: 'center', cursor: 'pointer', position: 'relative', zIndex: 1,
+                        background: 'rgba(28, 28, 30, 0.95)',
+                        transform: `translateX(${translateX}px)`,
+                        transition: startX ? 'none' : 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                        width: '100%',
+                        minHeight: '80px'
+                    }}
+                >
+                    {/* Ligne Colorée Accent (Plus subtile) */}
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: line.color }} />
+
+                    <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+
+                        {/* 1. Numéro de Ligne (XXL Hero) WITH ICON */}
+                        <div style={{
+                            display: 'flex', flexDirection: 'column', alignItems: 'center',
+                            marginRight: '16px', minWidth: '60px', gap: '4px'
+                        }}>
+                            {getModeIcon(line, line.color, 24)}
+                            <div style={{
+                                fontSize: '22px', fontWeight: '900', color: line.color,
+                                textShadow: '0 2px 10px rgba(0,0,0,0.3)', letterSpacing: '-1px', lineHeight: 1
+                            }}>
+                                {line.name}
+                            </div>
+                        </div>
+
+                        {/* 2. Infos Direction (Compact) */}
+                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                            <div style={{
+                                color: '#fff', fontWeight: '700', fontSize: '15px', lineHeight: '1.2',
+                                marginBottom: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px'
+                            }}>
+                                Vers {isReversed ? line.longName.split('<->')[0] : line.longName.split('<->')[1]}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#888', fontSize: '12px', fontWeight: '500' }}>
+                                <MapPin size={12} /> {line.closestStopName}
+                            </div>
+                        </div>
+
+                        {/* 3. Temps (Transit Style - Huge & Colorful) */}
+                        <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                            <div style={{
+                                background: '#2ecc71', color: '#000', padding: '4px 12px', borderRadius: '20px',
+                                display: 'flex', alignItems: 'baseline', gap: '2px', boxShadow: '0 4px 12px rgba(46, 204, 113, 0.3)'
+                            }}>
+                                <span style={{ fontSize: '24px', fontWeight: '900', lineHeight: '1' }}>{line.nextDepartures[0]}</span>
+                                <span style={{ fontSize: '13px', fontWeight: '700' }}>min</span>
+                                <Wifi size={14} style={{ marginLeft: '4px', opacity: 0.6 }} />
+                            </div>
+                            {/* Prochain départ & Favorite */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                                <span style={{ fontSize: '12px', color: '#666', fontWeight: '500' }}>{line.nextDepartures[1]} min</span>
+                                <Crown size={14} color="#f1c40f" fill="#f1c40f" style={{ opacity: 0.8 }} />
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    // --- RENDER CONTENT ---
     const renderContent = () => {
-        // MODE ACCUEIL
         if (mode === 'HOME') {
             return (
-                <div className="scroll-content">
-                    {/* Header avec Barre de recherche */}
-                    <div style={{ padding: '0 16px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}>
-                        <div style={{ background: '#2c2c2e', borderRadius: '12px', padding: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2ecc71' }} />
-                            <input
-                                placeholder="Où va-t-on ?"
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                style={{ background: 'transparent', border: 'none', color: 'white', flex: 1, outline: 'none', fontSize: '16px' }}
-                                onFocus={() => setSheetHeight(MAX_H)}
-                            />
-                        </div>
-                        {/* Liste des suggestions d'autocomplétion */}
-                        {suggestions.length > 0 && (
-                            <div style={{ background: '#2c2c2e', marginTop: '8px', borderRadius: '12px', overflow: 'hidden' }}>
-                                {suggestions.map((s, i) => (
-                                    <div key={i} onClick={() => handleSuggestionClick(s)} style={{ padding: '12px', borderBottom: '1px solid #333', color: 'white', display: 'flex', gap: '10px' }}>
-                                        <MapPin size={16} /> {s.name} <span style={{ color: '#888' }}>{s.subtitle}</span>
-                                    </div>
-                                ))}
+                <>
+                    {/* Barre de Recherche (Expansion au clic) - STYLE TRANSIT VERT */}
+                    {mode === 'HOME' && !isSearchActive && (
+                        <div style={{ padding: '0 20px 20px 20px' }}>
+                            <div
+                                onClick={() => setIsSearchActive(true)}
+                                style={{
+                                    position: 'relative', background: '#166534', borderRadius: '16px', padding: '16px',
+                                    display: 'flex', alignItems: 'center', gap: '12px', cursor: 'text',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)'
+                                }}
+                            >
+                                <div style={{ background: '#fff', borderRadius: '50%', padding: '4px' }}>
+                                    <Search size={16} color="#166534" />
+                                </div>
+                                <span style={{ color: '#fff', fontSize: '16px', fontWeight: '700' }}>Où allons-nous ?</span>
                             </div>
-                        )}
-                    </div>
+                        </div>
+                    )}
 
-                    <div className="section-title">À PROXIMITÉ</div>
-                    {nearbyLines.map((line, i) => (
-                        <SwipeableLineItem
-                            key={i}
-                            line={line}
-                            onClick={handleLineClick}
-                            onToggleDirection={toggleLineDirection}
-                            isReversed={directions[line.id]}
-                        />
-                    ))}
-                </div>
+                    {/* OVERLAY DE RECHERCHE (Style Transit) */}
+                    {isSearchActive && (
+                        <div style={{
+                            position: 'absolute', inset: 0, background: '#000', zIndex: 50,
+                            display: 'flex', flexDirection: 'column'
+                        }}>
+                            {/* Header Vert Transit */}
+                            <div style={{ background: '#1e8e3e', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <div
+                                    onClick={() => setIsSearchActive(false)}
+                                    style={{ padding: '8px', borderRadius: '50%', cursor: 'pointer', background: 'rgba(0,0,0,0.1)' }}
+                                >
+                                    <ArrowLeft size={24} color="#fff" />
+                                </div>
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    placeholder="Ligne ou destination"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    style={{
+                                        flex: 1, background: 'transparent', border: 'none', color: '#fff',
+                                        fontSize: '20px', fontWeight: '600', outline: 'none',
+                                        placeholderColor: 'rgba(255,255,255,0.7)'
+                                    }}
+                                />
+                                <div style={{ padding: '8px' }}>
+                                    <ArrowRightLeft size={24} color="#fff" style={{ opacity: 0.8 }} />
+                                </div>
+                            </div>
+
+                            {/* Liste des Actions Rapides */}
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
+
+                                {/* WRAPPED DEFAULT MENU */}
+                                {!searchQuery && (
+                                    <>
+                                        {/* Menu Items */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '32px' }}>
+                                            {[
+                                                { icon: MapPin, label: "Choisir sur la carte", color: '#fff', bg: '#2c2c2e', type: 'MAP' },
+                                                { icon: MapPin, label: "Repère sur la carte", sub: "44.8436, -0.5381", color: '#d35400', bg: '#2c2c2e', iconColor: '#9b59b6', type: 'MAP' },
+                                                { icon: Home, label: "Définir un domicile", color: '#fff', bg: '#2c2c2e', type: 'HOME' },
+                                                { icon: Briefcase, label: "Définir un lieu de travail", color: '#fff', bg: '#2c2c2e', type: 'WORK' },
+                                                { icon: Calendar, label: "Afficher événements", color: '#fff', bg: '#2c2c2e', type: 'EVENT' },
+                                            ].map((item, i) => (
+                                                <div key={i} onClick={() => handleShortcut(item.type)} style={{
+                                                    background: item.bg, padding: '16px', borderRadius: '16px',
+                                                    display: 'flex', alignItems: 'center', gap: '16px', cursor: 'pointer'
+                                                }}>
+                                                    <div style={{
+                                                        width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                    }}>
+                                                        <item.icon size={20} color={item.iconColor || '#fff'} />
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ color: item.color, fontWeight: '700', fontSize: '16px' }}>{item.label}</div>
+                                                        {item.sub && <div style={{ color: '#888', fontSize: '12px', marginTop: '2px' }}>{item.sub}</div>}
+                                                    </div>
+                                                    <ChevronRight size={20} color="#666" style={{ marginLeft: 'auto' }} />
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Recherches Récentes */}
+                                        <div style={{ color: '#888', fontSize: '13px', fontWeight: 'bold', marginBottom: '12px', textTransform: 'uppercase' }}>
+                                            Recherches Récentes
+                                        </div>
+                                        <div style={{ background: '#1c1c1e', borderRadius: '16px', overflow: 'hidden' }}>
+                                            <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '16px', borderBottom: '1px solid #333' }}>
+                                                <div style={{ background: '#fff', padding: '4px 8px', borderRadius: '4px', color: '#000', fontWeight: '900', fontSize: '12px' }}>SNCF</div>
+                                                <div style={{ color: '#fff', fontWeight: '600' }}>Montpellier Saint-Roch</div>
+                                                <div style={{ marginLeft: 'auto' }}>:</div>
+                                            </div>
+                                            <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                                                <div style={{ padding: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }}><Clock size={16} color="#aaa" /></div>
+                                                <div style={{ color: '#fff', fontWeight: '600' }}>Aéroport Houari Boumediene</div>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {suggestions.length > 0 && (
+                                    <div className="glass-card" style={{ marginTop: '8px', overflow: 'hidden' }}>
+                                        {suggestions.map((s, i) => (
+                                            <div key={i} onClick={() => handleSuggestionClick(s)} style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                                                <div style={{ padding: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }}><MapPin size={16} color="#fff" /></div>
+                                                <div>
+                                                    <div style={{ color: '#fff', fontWeight: '600' }}>{s.name}</div>
+                                                    <div style={{ color: '#888', fontSize: '12px' }}>{s.subtitle}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Nearby List (Restored) */}
+                    <div style={{ padding: '0 20px', paddingBottom: '40px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                            <span style={{ color: '#fff', fontSize: '18px', fontWeight: '800', letterSpacing: '-0.5px' }}>À Proximité</span>
+                            <span onClick={handleSeeAll} style={{ color: '#2ecc71', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>Voir tout</span>
+                        </div>
+                        {nearbyLines.map((line) => (
+                            <LineCard
+                                key={line.id}
+                                line={line}
+                                onClick={handleLineClick}
+                                isReversed={directions[line.id]}
+                                onToggle={toggleLineDirection}
+                            />
+                        ))}
+                    </div>
+                </>
             );
         }
 
-        // MODE DETAIL LIGNE
-        if (mode === 'LINE_DETAILS' && selectedLine) {
-            const isReversed = directions[selectedLine.id];
-            const currentStops = isReversed ? [...selectedLine.stops].reverse() : selectedLine.stops;
-            const destination = getDestination(selectedLine);
 
+
+        if (mode === 'LINE_DETAILS' && selectedLine) {
             return (
-                <div className="scroll-content">
-                    {/* Barre Retour */}
-                    <div className="header-bar">
-                        <ArrowLeft color="white" onClick={handleBack} />
-                        <div style={{ flex: 1 }}>
-                            <div className="header-title" style={{ fontSize: '16px' }}>Ligne {selectedLine.name}</div>
-                            <div style={{ color: '#aaa', fontSize: '12px' }}>Vers {destination}</div>
+                <div style={{ padding: 0, minHeight: '100%', background: '#000' }}>
+
+                    {/* GREEN HEADER (Line Details) */}
+                    <div style={{ background: '#1e8e3e', padding: '16px 20px 24px 20px', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                            <div onClick={handleBack} style={{ padding: '8px', background: 'rgba(0,0,0,0.2)', borderRadius: '50%', cursor: 'pointer', marginRight: '16px' }}>
+                                <ArrowLeft size={24} color="#fff" />
+                            </div>
+                            <div style={{ marginLeft: 'auto', padding: '6px 12px', background: '#fff', borderRadius: '12px', color: selectedLine.color, fontWeight: '900', fontSize: '18px', boxShadow: '0 2px 10px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                {getModeIcon(selectedLine, selectedLine.color, 20)}
+                                {selectedLine.name}
+                            </div>
                         </div>
-                        <div onClick={() => toggleLineDirection(selectedLine.id)} style={{ padding: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', cursor: 'pointer' }}>
-                            <ArrowRightLeft size={20} color="white" />
+
+                        <div>
+                            <div style={{ color: '#fff', fontSize: '24px', fontWeight: '800', lineHeight: '1.2' }}>Vers {directions[selectedLine.id] ? selectedLine.longName.split('<->')[0] : selectedLine.longName.split('<->')[1]}</div>
+                            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', fontWeight: '500', marginTop: '4px' }}>Direction Principale</div>
                         </div>
                     </div>
-                    {/* Gros Compteur Temps */}
-                    <div className="big-time-display">
-                        <Wifi size={24} className="radar-icon-big" color={selectedLine.color} />
-                        <div className="time-val" style={{ color: selectedLine.color }}>{selectedLine.nextDepartures[0]}<span style={{ fontSize: '20px' }}>min</span></div>
-                        <div style={{ color: '#888', marginBottom: '10px' }}>Prochain: {selectedLine.nextDepartures[1]} min</div>
-                        <div className="go-btn" onClick={handleGoClick}>GO</div>
+
+                    <div className="glass-card" style={{ padding: '24px', textAlign: 'center', marginBottom: '24px', margin: '0 20px 24px 20px', background: '#1c1c1e', border: '1px solid #333' }}>
+                        <div style={{ color: '#888', fontWeight: '600', marginBottom: '8px', textTransform: 'uppercase', fontSize: '12px', letterSpacing: '1px' }}>Prochain départ</div>
+                        <div style={{ fontSize: '56px', fontWeight: '900', color: '#fff', lineHeight: 1, letterSpacing: '-2px' }}>
+                            {selectedLine.nextDepartures && selectedLine.nextDepartures[0] ? selectedLine.nextDepartures[0] : '--'} <span style={{ fontSize: '20px', color: '#2ecc71' }}>min</span>
+                        </div>
+                        <div style={{ marginTop: '16px' }}>
+                            <button onClick={handleGoClick} style={{ background: '#fff', color: '#000', border: 'none', padding: '12px 32px', borderRadius: '30px', fontSize: '16px', fontWeight: '800', cursor: 'pointer' }}>
+                                Voir Itinéraire
+                            </button>
+                        </div>
                     </div>
-                    {/* Liste des arrêts (Thermomètre) */}
-                    <div className="stops-list">
-                        <div className="timeline-line" style={{ background: selectedLine.color }} />
-                        {currentStops.map((stop, i) => (
-                            <div key={i} onClick={() => handleStopClick(stop)} className="stop-item">
-                                <div className="stop-dot" style={{ borderColor: selectedLine.color }} />
-                                <div className="stop-name">{stop.name}</div>
+
+                    <div style={{ paddingLeft: '20px', position: 'relative' }}>
+                        <div style={{ position: 'absolute', left: '29px', top: 0, bottom: 0, width: '2px', background: '#333' }} />
+                        {(directions[selectedLine.id] ? [...selectedLine.stops].reverse() : selectedLine.stops).map((stop, i) => (
+                            <div key={i} style={{ display: 'flex', alignItems: 'center', marginBottom: '24px', position: 'relative' }}>
+                                <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: '#000', border: `3px solid ${i === 0 ? '#2ecc71' : (i === selectedLine.stops.length - 1 ? '#e74c3c' : '#fff')} `, zIndex: 2 }} />
+                                <div style={{ marginLeft: '20px', flex: 1 }}>
+                                    <div style={{ color: '#fff', fontSize: '16px', fontWeight: '500' }}>{stop.name}</div>
+                                    {realTimeSchedule[stop.name] && (
+                                        <div style={{ color: '#2ecc71', fontSize: '13px', fontWeight: '700', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            <Clock size={12} />
+                                            {getCountdown(realTimeSchedule[stop.name])}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -378,109 +642,215 @@ const TransitUI = ({ searchCenter, userLocation, transitData }) => {
             );
         }
 
-        // MODE RESULTATS RECHERCHE
         if (mode === 'ROUTING_RESULTS') {
             return (
-                <div className="scroll-content">
-                    <div className="header-bar">
-                        <ArrowLeft color="white" onClick={handleBack} />
-                        <span className="header-title">Itinéraires</span>
-                    </div>
-                    {routeResults.map((r, i) => (
-                        <div key={i} className="route-card" onClick={() => {
-                            setTripPlan({
-                                line: r.line,
-                                segments: [
-                                    { type: 'WALK', label: 'Vers l\'arrêt', time: r.walkToStart + ' min' },
-                                    { type: 'BUS', label: `Ligne ${r.line.name}`, from: r.startStop.name, to: r.endStop.name, time: r.transitDuration + ' min', color: r.line.color },
-                                    { type: 'WALK', label: 'Vers destination', time: r.walkFromEnd + ' min' }
-                                ],
-                                startTime: new Date()
-                            });
-                            setMode('TRIP_PLAN'); // Vers mode navigation
-                        }}>
-                            <div className="route-header">
-                                <div className="line-badge" style={{ background: r.line.color }}>{r.line.name}</div>
-                                <div className="route-time">{r.totalDuration} min</div>
+                <div style={{ padding: 0, minHeight: '100%', background: '#000' }}>
+
+                    {/* GREEN HEADER (Double Input) */}
+                    <div style={{ background: '#1e8e3e', padding: '16px 20px 24px 20px', borderBottomLeftRadius: '24px', borderBottomRightRadius: '24px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                            <div onClick={handleBack} style={{ padding: '8px', background: 'rgba(0,0,0,0.2)', borderRadius: '50%', cursor: 'pointer', marginTop: '4px' }}>
+                                <ArrowLeft size={24} color="#fff" />
                             </div>
-                            <div className="route-sub">Direction {r.line.longName.split('<->')[1]}</div>
+
+                            {/* Inputs Stack */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '10px 14px', borderRadius: '12px', color: '#fff', fontSize: '15px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#fff' }} />
+                                    Ma position
+                                </div>
+                                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '10px 14px', borderRadius: '12px', color: '#fff', fontSize: '15px', fontWeight: '500', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <MapPin size={14} color="#fff" />
+                                    {selectedLine ? `Vers ${selectedLine.longName.split('<->')[1]}` : 'Destination'}
+                                </div>
+                            </div>
+
+                            <div style={{ padding: '8px', marginTop: '30px' }}>
+                                <ArrowRightLeft size={20} color="#fff" style={{ transform: 'rotate(90deg)', opacity: 0.8 }} />
+                            </div>
                         </div>
-                    ))}
+
+                        {/* Filter Chip */}
+                        <div style={{ display: 'flex', gap: '10px', paddingLeft: '44px' }}>
+                            <span style={{ background: '#fff', color: '#000', padding: '6px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: '800', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                Départ maintenant
+                                <ChevronUp size={14} style={{ transform: 'rotate(180deg)' }} />
+                            </span>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <ArrowRightLeft size={16} color="#fff" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ROUTE LIST */}
+                    <div style={{ padding: '0 16px' }}>
+                        {routeResults.map((r, i) => (
+                            <div key={i} className="glass-card" onClick={() => { setTripPlan({ line: selectedLine, segments: [] }); setMode('TRIP_PLAN'); }} style={{ marginBottom: '12px', padding: '16px', cursor: 'pointer', background: '#1c1c1e', border: '1px solid #333' }}>
+
+                                {/* Top Row: Access Time + Duration */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '16px' }}>
+                                    <div>
+                                        {/* Timeline Visualization */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
+                                            {r.segments && r.segments.map((seg, j) => (
+                                                <React.Fragment key={j}>
+                                                    {/* Dot/Pill */}
+                                                    {seg.type === 'WALK' ? (
+                                                        <div style={{ width: Math.max(20, seg.duration * 2) + 'px', height: '6px', borderRadius: '3px', background: '#333', position: 'relative' }}>
+                                                            {/* Dotted effect overlay */}
+                                                            <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#666 1.5px, transparent 1.5px)', backgroundSize: '6px 6px', opacity: 0.5 }} />
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{
+                                                            minWidth: '40px', flex: 1, height: '28px', borderRadius: '14px',
+                                                            background: seg.color, color: '#fff', fontSize: '14px', fontWeight: '900',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            padding: '0 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+                                                        }}>
+                                                            {seg.line}
+                                                        </div>
+                                                    )}
+                                                </React.Fragment>
+                                            ))}
+                                        </div>
+                                        <div style={{ color: '#fff', fontWeight: '700', fontSize: '15px' }}>
+                                            Partez dans <span style={{ color: '#2ecc71' }}>{r.segments && r.segments.length > 0 ? parseInt(r.segments[0].duration) : 0} min</span>
+                                            <Wifi size={14} color="#2ecc71" style={{ display: 'inline', marginLeft: '6px' }} />
+                                        </div>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <div style={{ color: '#fff', fontWeight: '900', fontSize: '20px' }}>{r.arrival}</div>
+                                        <div style={{ color: '#888', fontSize: '13px', fontWeight: '600' }}>{r.totalDuration} min</div>
+                                    </div>
+                                </div>
+
+                                {/* Bottom Info (Crowd / Tags) */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    {r.tags && r.tags.length > 0 && r.tags.map(t => (
+                                        <span key={t} style={{ fontSize: '11px', fontWeight: '700', color: '#f1c40f', background: 'rgba(241, 196, 15, 0.1)', padding: '4px 8px', borderRadius: '6px' }}>
+                                            {t}
+                                        </span>
+                                    ))}
+                                    {r.crowd && (
+                                        <div style={{ display: 'flex', gap: '2px', marginLeft: 'auto' }}>
+                                            {[1, 2, 3].map(lvl => (
+                                                <div key={lvl} style={{
+                                                    width: '6px', height: '14px', borderRadius: '2px',
+                                                    background: (r.crowd === 'low' && lvl === 1) ? '#2ecc71' :
+                                                        (r.crowd === 'med' && lvl <= 2) ? '#f39c12' :
+                                                            (r.crowd === 'high') ? '#e74c3c' : '#333'
+                                                }} />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                            </div>
+                        ))}
+
+                        <div className="glass-card" style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', background: '#2c2c2e' }}>
+                            <Crown size={20} color="#f1c40f" fill="#f1c40f" />
+                            <span style={{ color: '#fff', fontWeight: '700' }}>Trouver d'autres trajets</span>
+                            <ChevronRight size={20} color="#666" style={{ marginLeft: 'auto' }} />
+                        </div>
+                    </div>
+                </div>
+            )
+        }
+        if (mode === 'TRIP_PLAN' && tripPlan) {
+            return (
+                <div style={{ padding: '0 20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '24px' }}>
+                        <div onClick={handleBack} style={{ padding: '10px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', cursor: 'pointer', marginRight: '16px' }}>
+                            <ArrowLeft size={24} color="#fff" />
+                        </div>
+                        <div>
+                            <div style={{ color: '#fff', fontSize: '20px', fontWeight: '800' }}>Itinéraire</div>
+                            <div style={{ color: '#aaa', fontSize: '14px' }}>Vers {tripPlan.line.longName.split('<->')[1]}</div>
+                        </div>
+                    </div>
+
+                    <div className="glass-card" style={{ padding: '24px' }}>
+                        {tripPlan.segments.map((seg, i) => (
+                            <div key={i} style={{ display: 'flex', marginBottom: i === tripPlan.segments.length - 1 ? 0 : '24px', position: 'relative' }}>
+                                {/* Timeline Line */}
+                                {i !== tripPlan.segments.length - 1 && (
+                                    <div style={{ position: 'absolute', left: '15px', top: '30px', bottom: '-24px', width: '2px', borderLeft: '2px dashed rgba(255,255,255,0.2)' }} />
+                                )}
+
+                                {/* Icon */}
+                                <div style={{
+                                    width: '32px', height: '32px', borderRadius: '50%',
+                                    background: seg.type === 'BUS' ? seg.color : '#333',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2, marginRight: '16px'
+                                }}>
+                                    {seg.type === 'WALK' ? <Navigation size={14} color="#fff" /> : <div style={{ fontWeight: '800', fontSize: '12px' }}>{tripPlan.line.name}</div>}
+                                </div>
+
+                                {/* Content */}
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                        <span style={{ color: '#fff', fontWeight: '700', fontSize: '16px' }}>{seg.label}</span>
+                                        <span style={{ color: '#2ecc71', fontWeight: '600' }}>{seg.time}</span>
+                                    </div>
+                                    {seg.from && <div style={{ color: '#aaa', fontSize: '13px' }}>De : {seg.from}</div>}
+                                    {seg.to && <div style={{ color: '#aaa', fontSize: '13px' }}>Vers : {seg.to}</div>}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div style={{ marginTop: '24px' }}>
+                        <button onClick={() => alert("Navigation GPS démarrée !")} style={{ width: '100%', background: '#2ecc71', color: '#fff', border: 'none', padding: '16px', borderRadius: '16px', fontSize: '18px', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                            <Navigation size={20} />
+                            Démarrer
+                        </button>
+                    </div>
                 </div>
             );
         }
-        return null; // Si TripPlan (non implémenté visuellement ici pour simplifier le snippet)
+
+        return null;
     };
 
-    const isLight = mode === 'TRIP_PLAN'; // Mode clair pour la navigation GPS
 
     return (
-        <div className="sheet-container" style={{ height: sheetHeight, background: isLight ? '#fff' : '#1c1c1e' }}>
-            {/* Poignée de redimensionnement */}
-            <div onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
-                style={{ width: '100%', padding: '10px 0', display: 'flex', justifyContent: 'center', cursor: 'grab', flexShrink: 0, touchAction: 'none' }}>
-                <div style={{ width: '40px', height: '5px', background: 'rgba(255,255,255,0.2)', borderRadius: '3px' }} />
+        <div
+            className="glass-panel"
+            style={{
+                position: 'fixed', bottom: 0, left: 0, right: 0,
+                height: sheetHeight,
+                borderTopLeftRadius: '32px', borderTopRightRadius: '32px',
+                zIndex: 2000,
+                display: 'flex', flexDirection: 'column',
+                transition: isDragging ? 'none' : 'height 0.5s cubic-bezier(0.16, 1, 0.3, 1)', // Spring physics
+                willChange: 'height',
+                background: '#000', // Solid Black
+                boxShadow: '0 -10px 40px rgba(0,0,0,0.5)',
+                borderTop: '1px solid #333'
+            }}
+        >
+            {/* DRAG HANDLE */}
+            <div
+                onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}
+                style={{ width: '100%', padding: '16px', display: 'flex', justifyContent: 'center', cursor: 'grab', touchAction: 'none' }}
+            >
+                <div style={{ width: '48px', height: '6px', background: 'rgba(255,255,255,0.2)', borderRadius: '3px' }} />
             </div>
 
-            {renderContent()}
+            {/* CONTENT SCROLLABLE */}
+            <div className="no-scrollbar" style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                {renderContent()}
+            </div>
 
-            {/* Injections de style CSS interne au composant (CSS-in-JS) */}
-            <StyleBlock light={isLight} isDragging={isDragging} />
-        </div>
+            <style>{`
+                            @keyframes pulse-radar { 0% { opacity: 0.4; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.4; transform: scale(0.9); } }
+                            .radar-icon { animation: pulse-radar 2s infinite ease-in-out; }
+                        `}</style>
+        </div >
     );
 };
 
-// --- STYLES CSS (Mis ici pour garder le fichier auto-suffisant) ---
-const StyleBlock = ({ light, isDragging }) => (
-    <style>{`
-        .sheet-container {
-            position: fixed; bottom: 0; left: 0; right: 0;
-            background: ${light ? '#fff' : '#1c1c1e'};
-            border-top-left-radius: 20px; border-top-right-radius: 20px;
-            box-shadow: 0 -5px 30px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; overflow: hidden;
-            /* Animation fluide sauf si on drag */
-            transition: ${isDragging ? 'none' : 'height 0.6s cubic-bezier(0.19, 1, 0.22, 1)'};
-            z-index: 2000; font-family: 'Inter', sans-serif; will-change: height;
-        }
-
-        /* Responsive Desktop */
-        @media (min-width: 768px) {
-            .sheet-container {
-                left: 20px; right: auto; width: 400px; bottom: 20px; border-radius: 20px;
-            }
-        }
-        .scroll-content { flex: 1; overflow-y: auto; padding-bottom: 40px; }
-        
-        .line-item { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; cursor: pointer; color: white; position: relative; overflow: hidden; }
-        .line-icon { width: 42px; height: 42px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; color: white; margin-right: 16px; flex-shrink: 0; }
-        .line-info { flex: 1; min-width: 0; }
-        .line-dest { font-weight: 700; font-size: 16px; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .line-dist { color: #888; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        .line-time-container { text-align: right; display: flex; align-items: center; gap: 8px; }
-        .time-primary { font-size: 20px; font-weight: 800; display: flex; align-items: baseline; gap: 2px; }
-        .time-secondary { font-size: 14px; color: #666; font-weight: 600; }
-        
-        /* Animation Radar pour le temps réel */
-        @keyframes pulse-radar { 0% { opacity: 0.4; transform: scale(0.9); } 50% { opacity: 1; transform: scale(1.1); } 100% { opacity: 0.4; transform: scale(0.9); } }
-        .radar-icon { animation: pulse-radar 2s infinite ease-in-out; margin-right: 4px; opacity: 0.8; }
-        .radar-icon-big { animation: pulse-radar 2s infinite ease-in-out; margin-right: 8px; opacity: 1; margin-bottom: -4px; }
-
-        .header-bar { padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 16px; }
-        
-        .big-time-display { text-align: center; margin: 30px 0; display: flex; flex-direction: column; align-items: center; }
-        .time-val { font-size: 64px; font-weight: 800; line-height: 1; margin: 10px 0; letter-spacing: -2px; }
-        .go-btn { background: #2ecc71; color: black; padding: 14px 50px; border-radius: 30px; font-weight: 800; font-size: 18px; display: inline-block; margin-top: 20px; cursor: pointer; box-shadow: 0 8px 20px rgba(46,204,113,0.3); transition: transform 0.2s; }
-        .go-btn:active { transform: scale(0.95); }
-        
-        .stops-list { position: relative; padding: 0 16px; margin-top: 20px; }
-        .timeline-line { position: absolute; left: 35px; top: 10px; bottom: 30px; width: 4px; border-radius: 2px; }
-        .stop-item { display: flex; align-items: center; margin-bottom: 24px; position: relative; cursor: pointer; }
-        .stop-dot { width: 14px; height: 14px; background: #1c1c1e; border: 3px solid white; border-radius: 50%; margin: 0 20px 0 14px; z-index: 2; flex-shrink: 0; }
-        .stop-name { color: white; font-weight: 600; font-size: 16px; flex: 1; }
-    `}</style>
-);
-
 export default TransitUI;
+
 

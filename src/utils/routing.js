@@ -1,136 +1,211 @@
 // ============================================================================
 // FICHIER: routing.js
-// ROLE: Cerveau du calcul d'itinéraire (GPS)
+// ROLE: Moteur de recherche d'itinéraire A* (A-Star)
 // ============================================================================
 
-// Cette fonction calcule la distance (en KM) entre deux points GPS (Latitude, Longitude).
-// Elle utilise une formule mathématique appelée "Formule de Haversine".
-const getDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Rayon de la Terre en km (c'est une constante physique)
+const WALK_SPEED_KMPH = 5.0; // Vitesse de marche (km/h)
+const BUS_SPEED_KMPH = 25.0; // Vitesse moyenne bus (km/h) estimée
+const MAX_WALK_DIST_KM = 0.8; // Distance max de marche vers un arrêt
 
-    // On convertit les degrés en radians car les fonctions Math.sin/cos attendent des radians
+const getDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
-
-    // Calcul de la distance "à vol d'oiseau" sur une sphère
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c; // Distance finale en KM
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
-// Fonction principale exportée : Trouve des itinéraires entre un point A et un point B
-// startCoords: { lat: ..., lng: ... } (Départ)
-// endCoords: { lat: ..., lng: ... } (Arrivée)
-// transitData: La liste de toutes les lignes de bus et leurs arrêts
-export const findRoutes = (startCoords, endCoords, transitData) => {
+// Priority Queue minimaliste pour A*
+class PriorityQueue {
+    constructor() { this.items = []; }
+    enqueue(element, priority) {
+        this.items.push({ element, priority });
+        this.items.sort((a, b) => a.priority - b.priority);
+    }
+    dequeue() { return this.items.shift(); }
+    isEmpty() { return this.items.length === 0; }
+}
 
-    // ---------------------------------------------------------
-    // ETAPE 1 : Identifier les arrêts proches du DEPART et de l'ARRIVÉE
-    // ---------------------------------------------------------
-    const startStops = []; // Va contenir tous les arrêts à < 1km du départ
-    const endStops = [];   // Va contenir tous les arrêts à < 1km de l'arrivée
+export const findRoutes = async (startCoords, endCoords, transitData) => {
+    console.log("🚀 Starting A* Routing...");
+    if (!startCoords || !endCoords) return [];
 
-    const SEARCH_RADIUS = 1.0; // Rayon de recherche : 1 km
+    // --- CONSTRUCTION DU GRAPHE (IMPLICITE) ---
 
-    // On parcourt chaque ligne de bus disponible
+    // 1. Identifier les arrêts de départ et d'arrivée potentiels
+    const allStops = [];
     transitData.forEach(line => {
-        if (!line.stops) return; // Sécurité : si la ligne n'a pas d'arrêts, on l'ignore
-
-        // On parcourt chaque arrêt de la ligne
         line.stops.forEach((stop, idx) => {
-
-            // Calcul distance Arret <-> Point de Départ choisi par l'utilisateur
-            const distToStart = getDistance(startCoords.lat, startCoords.lng, stop.lat, stop.lng);
-            if (distToStart <= SEARCH_RADIUS) {
-                // Si c'est proche, on l'ajoute à la liste des départs possibles
-                startStops.push({
-                    ...stop, // On garde toutes les infos de l'arrêt (nom, lat, lng...)
-                    lineId: line.id, // On note à quelle ligne il appartient
-                    lineName: line.name,
-                    lineColor: line.color,
-                    lineIcon: line.icon,
-                    lineLongName: line.longName,
-                    index: idx, // Important : L'ordre de l'arrêt dans la ligne (1er, 2eme, 3eme...)
-                    dist: distToStart
-                });
-            }
-
-            // Calcul distance Arret <-> Point d'Arrivée choisi par l'utilisateur
-            const distToEnd = getDistance(endCoords.lat, endCoords.lng, stop.lat, stop.lng);
-            if (distToEnd <= SEARCH_RADIUS) {
-                // Si c'est proche, on l'ajoute à la liste des arrivées possibles
-                endStops.push({
-                    ...stop,
-                    lineId: line.id,
-                    lineName: line.name,
-                    lineColor: line.color,
-                    lineIcon: line.icon,
-                    lineLongName: line.longName,
-                    index: idx,
-                    dist: distToEnd
-                });
-            }
+            allStops.push({ ...stop, lineId: line.id, lineName: line.name, color: line.color, idx });
         });
     });
 
-    // ---------------------------------------------------------
-    // ETAPE 2 : Trouver les routes DIRECTES
-    // "Est-ce qu'il y a une ligne qui passe par un arrêt de départ ET un arrêt d'arrivée ?"
-    // ---------------------------------------------------------
-    const directRoutes = [];
+    const startNode = { id: 'START', lat: startCoords.lat, lng: startCoords.lng, type: 'virtual' };
+    const endNode = { id: 'END', lat: endCoords.lat, lng: endCoords.lng, type: 'virtual' };
 
-    // Pour chaque arrêt de départ potentiel...
-    startStops.forEach(start => {
-        // ...on cherche s'il existe un arrêt d'arrivée SUR LA MEME LIGNE (même lineId)
-        // ET qui se trouve APRES l'arrêt de départ (index > start.index)
-        const validEnds = endStops.filter(end => end.lineId === start.lineId && end.index > start.index);
+    // --- ALGORITHME A* ---
 
-        validEnds.forEach(end => {
-            // BRAVO ! On a trouvé un trajet direct.
+    // Heuristique: Temps min (Marche/Vol d'oiseau) jusqu'à l'arrivée
+    const heuristic = (node) => {
+        const dist = getDistance(node.lat, node.lng, endNode.lat, endNode.lng);
+        return (dist / BUS_SPEED_KMPH) * 60; // Minutes
+    };
 
-            // On récupère les infos de la ligne entière
-            const line = transitData.find(l => l.id === start.lineId);
+    const openSet = new PriorityQueue();
+    openSet.enqueue(startNode, 0);
 
-            // On isole les arrêts intermédiaires (entre départ et arrivée)
-            const stopsSegment = line.stops.slice(start.index, end.index + 1);
+    const cameFrom = new Map(); // Pour reconstruire le chemin
+    const gScore = new Map(); // Coût le moins cher pour arriver ici
+    gScore.set(startNode.id, 0);
 
-            // Estimation du temps de trajet en bus :
-            // Soit on a une info 'timeFromStart', soit on estime (3 min par arrêt)
-            const duration = (end.timeFromStart - start.timeFromStart) || (stopsSegment.length * 3);
+    const nodes = new Map(); // Stocker les objets noeuds par ID
+    nodes.set(startNode.id, startNode);
 
-            // Estimation du temps de marche à pied
-            const walkToStart = Math.ceil(start.dist * 15); // On marche à 4km/h environ => 15 min pour 1km
-            const walkFromEnd = Math.ceil(end.dist * 15);
+    let count = 0;
+    while (!openSet.isEmpty()) {
+        const currentRef = openSet.dequeue();
+        const current = currentRef.element;
+        count++;
 
-            const totalDuration = walkToStart + duration + walkFromEnd;
+        if (count > 2000) break; // Sécurité boucle infinie
 
-            // On crée l'objet "Itinéraire" final
-            directRoutes.push({
-                type: 'direct',
-                line: line,
-                startStop: start,
-                endStop: end,
-                startTime: new Date(), // Date du calcul
-                walkToStart,       // Temps marche jusqu'à l'arrêt
-                transitDuration: duration, // Temps dans le bus
-                walkFromEnd,       // Temps marche depuis l'arrêt jusqu'à destination
-                totalDuration: totalDuration, // Temps total
-                score: totalDuration // Le score sert à trier (le plus court est le mieux)
+        // Si on est assez proche de l'arrivée (distance de marche), on tente de finir
+        const distToEnd = getDistance(current.lat, current.lng, endNode.lat, endNode.lng);
+        if (current.id === 'END' || distToEnd < 0.1) {
+            return reconstructPath(cameFrom, current, endNode);
+        }
+
+        // --- VOISINS ---
+        const neighbors = [];
+
+        // CAS 1: Point de Départ (Virtuel) ou Arrêt -> Marcher vers Arrêts proches
+        if (current.type === 'virtual' || current.type === 'stop') {
+            // Chercher arrêts marchables
+            allStops.forEach(stop => {
+                const d = getDistance(current.lat, current.lng, stop.lat, stop.lng);
+                const uniqueId = `STOP_${stop.lineId}_${stop.idx}`;
+                if (d < MAX_WALK_DIST_KM) {
+                    neighbors.push({
+                        id: uniqueId,
+                        node: { ...stop, id: uniqueId, type: 'stop' },
+                        cost: (d / WALK_SPEED_KMPH) * 60, // Temps marche
+                        action: 'WALK'
+                    });
+                }
             });
+
+            // Marcher vers la destination finale
+            if (distToEnd < MAX_WALK_DIST_KM) {
+                neighbors.push({
+                    id: 'END',
+                    node: endNode,
+                    cost: (distToEnd / WALK_SPEED_KMPH) * 60,
+                    action: 'WALK_END'
+                });
+            }
+        }
+
+        // CAS 2: Arrêt de Bus -> Arrêt suivant (Transit)
+        if (current.type === 'stop') {
+            const line = transitData.find(l => l.id === current.lineId);
+            if (line && current.idx < line.stops.length - 1) {
+                const nextStop = line.stops[current.idx + 1];
+                const uniqueId = `STOP_${line.id}_${current.idx + 1}`;
+
+                // Estimation temps trajet (réel via nextDepartures si dispo, sinon dist/vitesse)
+                const d = getDistance(current.lat, current.lng, nextStop.lat, nextStop.lng);
+                const travelTime = (d / BUS_SPEED_KMPH) * 60 + 1; // +1 min pénalité arrêt
+
+                neighbors.push({
+                    id: uniqueId,
+                    node: { ...nextStop, id: uniqueId, lineId: line.id, idx: current.idx + 1, type: 'stop' },
+                    cost: travelTime,
+                    action: 'RIDE',
+                    line: line
+                });
+            }
+        }
+
+        // --- RELAXATION ---
+        for (const neighbor of neighbors) {
+            const tentativeGScore = gScore.get(current.id) + neighbor.cost;
+            const neighborId = neighbor.id;
+
+            if (tentativeGScore < (gScore.get(neighborId) || Infinity)) {
+                cameFrom.set(neighborId, { from: current, action: neighbor.action, line: neighbor.line, cost: neighbor.cost });
+                gScore.set(neighborId, tentativeGScore);
+                nodes.set(neighborId, neighbor.node);
+
+                const f = tentativeGScore + heuristic(neighbor.node);
+                openSet.enqueue(neighbor.node, f);
+            }
+        }
+    }
+
+    return []; // Pas de chemin trouvé
+};
+
+const reconstructPath = (cameFrom, current, endNode) => {
+    const path = [];
+    let currId = current.id;
+
+    // Si on a fini par marcher vers END, on l'ajoute
+    if (currId !== 'END') {
+        // Logic to handle exact end snap if needed
+    }
+
+    while (cameFrom.has(currId)) {
+        const step = cameFrom.get(currId);
+        path.push({
+            to: currId,
+            from: step.from.id,
+            action: step.action,
+            line: step.line,
+            cost: step.cost
         });
+        currId = step.from.id;
+    }
+    path.reverse();
+
+    // Convert A* steps to Transit App Route Format
+    return formatRouteResult(path, endNode);
+}
+
+const formatRouteResult = (steps, endNode) => {
+    if (!steps.length) return [];
+
+    // Simplification: On regroupe les segments RIDE consécutifs
+    const simplified = [];
+    let currentSegment = null;
+
+    steps.forEach(step => {
+        if (step.action === 'RIDE') {
+            if (currentSegment && currentSegment.type === 'BUS' && currentSegment.line.id === step.line.id) {
+                currentSegment.duration += step.cost;
+                currentSegment.endStop = step.to;
+            } else {
+                if (currentSegment) simplified.push(currentSegment);
+                currentSegment = { type: 'BUS', line: step.line, duration: step.cost, startStop: step.from, endStop: step.to, color: step.line.color };
+            }
+        } else if (step.action === 'WALK' || step.action === 'WALK_END') {
+            if (currentSegment) simplified.push(currentSegment);
+            currentSegment = { type: 'WALK', duration: step.cost, color: '#999' };
+        }
     });
+    if (currentSegment) simplified.push(currentSegment);
 
-    // ---------------------------------------------------------
-    // ETAPE 3 : Trier et renvoyer les résultats
-    // ---------------------------------------------------------
+    // Create the final object expected by TransitUI
+    const totalDuration = simplified.reduce((acc, s) => acc + s.duration, 0);
+    const mainLine = simplified.find(s => s.type === 'BUS')?.line;
 
-    // On trie du plus rapide au moins rapide
-    // Et on ne garde que les 5 meilleurs (slice 0, 5)
-    return directRoutes.sort((a, b) => a.score - b.score).slice(0, 5);
+    return [{
+        id: 'real-route-' + Date.now(),
+        line: mainLine || { name: 'Marche', color: '#999' }, // Fallback
+        segments: simplified,
+        totalDuration: Math.ceil(totalDuration),
+        score: totalDuration,
+        startTime: new Date(),
+        arrival: new Date(Date.now() + totalDuration * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }];
 };
 

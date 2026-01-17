@@ -1,13 +1,26 @@
 import etusaRaw from './etusa_raw.json';
+import { EtusaClient } from '../services/EtusaClient';
 
-// Helper to calculate a consistent color from string (line name)
+// Helper to pick a vibrant color from a curated palette
 const stringToColor = (str) => {
+    const palette = [
+        '#e74c3c', // Red
+        '#e67e22', // Orange
+        '#f1c40f', // Yellow
+        '#2ecc71', // Green
+        '#1abc9c', // Teal
+        '#3498db', // Blue
+        '#9b59b6', // Purple
+        '#e91e63', // Pink
+        '#ff5722', // Deep Orange
+        '#00bcd4'  // Cyan
+    ];
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
         hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-    return '#' + "00000".substring(0, 6 - c.length) + c;
+    const index = Math.abs(hash) % palette.length;
+    return palette[index];
 }
 
 // Fixed Manual Data (Metro & Tram)
@@ -84,11 +97,22 @@ const initialEtusaLines = etusaRaw.map(line => {
 
 export const transitLines = [...fixedLines, ...initialEtusaLines];
 
-// Async Hydrator
+// Async Hydrator using Real ETUSA API
 export const hydrateTransitData = async () => {
     try {
-        const response = await fetch('/alger_stops.json');
-        const stopDatabase = await response.json();
+        console.log("🌊 Hydrating data from ETUSA API...");
+        const remoteStops = await EtusaClient.getAllStops();
+
+        if (!remoteStops || remoteStops.length === 0) {
+            console.warn("⚠️ API returned no stops, falling back to basic data.");
+            return transitLines;
+        }
+
+        console.log(`✅ Loaded ${remoteStops.length} stops from API.`);
+
+        // Map ETUSA lines to our format
+        // Note: For now we map our known lines to the real stops if names match
+        // Ideally we would fetch lines dynamically too, but we start by enhancing known lines.
 
         const hydratedEtusa = etusaRaw.map(line => {
             const stopsRaw = line.itineraire.aller || [];
@@ -96,19 +120,20 @@ export const hydrateTransitData = async () => {
             const processedStops = stopsRaw.map((s, idx) => {
                 const normalize = (str) => str?.toLowerCase().trim().replace(/\s+/g, ' ');
                 const sName = normalize(s.nom);
-                const dbStop = stopDatabase.find(dbS => normalize(dbS.nom) === sName);
+
+                // Find matching real stop by name (approximate)
+                const realStop = remoteStops.find(rs => normalize(rs.name).includes(sName) || sName.includes(normalize(rs.name)));
 
                 return {
-                    id: `stop-${line.idLigne}-${idx}`,
-                    name: dbStop ? dbStop.nom : s.nom,
-                    name_ar: dbStop ? dbStop.nom_ar : "",
-                    lat: dbStop ? parseFloat(dbStop.lat) : parseFloat(s.lat),
-                    lng: dbStop ? parseFloat(dbStop.lon) : parseFloat(s.lon),
-                    commune: dbStop ? dbStop.commune : "",
-                    timeFromStart: idx * 3,
+                    id: realStop ? `stop-api-${realStop.id}` : `stop-${line.idLigne}-${idx}`,
+                    name: realStop ? realStop.name : s.nom,
+                    lat: realStop ? realStop.lat : parseFloat(s.lat),
+                    lng: realStop ? realStop.lng : parseFloat(s.lon),
                     isBigStop: idx === 0 || idx === stopsRaw.length - 1
                 };
             });
+
+            // Re-calculate colors/icons with new helper
             const start = processedStops[0]?.name || "Départ";
             const end = processedStops[processedStops.length - 1]?.name || "Terminus";
 
@@ -119,14 +144,12 @@ export const hydrateTransitData = async () => {
                 longName: `${start} <-> ${end}`,
                 color: stringToColor(line.nomLigne),
                 icon: 'B',
-                schedule: [5, 10, 15, 25, 40],
+                schedule: [5, 10, 15, 25, 40], // Can be hydrated later with getSchedule
                 stops: processedStops,
                 originalData: line
             };
         });
 
-        // Debug: Log success
-        console.log(`Hydrated ${hydratedEtusa.length} lines with improved data.`);
         return [...fixedLines, ...hydratedEtusa];
 
     } catch (e) {

@@ -5,6 +5,14 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: true
+    host: true,
+    proxy: {
+      '/api/etusa': {
+        target: 'https://etusaapi.streamsystem.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/etusa/, ''),
+        secure: false, // In case of SSL issues
+      },
+    }
   }
 })
